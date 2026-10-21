@@ -9,6 +9,7 @@
       --bg-color: #121214;
       --card-bg: #1e1e24;
       --accent-color: #ff4500;
+      --accent-hover: #ff6347;
       --text-main: #e1e1e6;
       --text-muted: #a8a8b3;
       --border-color: #323238;
@@ -22,7 +23,7 @@
       margin: 0;
       padding: 20px;
     }
-    .container { max-width: 600px; margin: 0 auto; }
+    .container { max-width: 650px; margin: 0 auto; }
     h1 { font-size: 1.5rem; color: #fff; text-align: center; }
     .card {
       background: var(--card-bg);
@@ -55,8 +56,45 @@
       margin-top: 20px;
       transition: background 0.2s;
     }
-    button:hover { background: #ff6347; }
+    button:hover { background: var(--accent-hover); }
     button:disabled { background: var(--border-color); cursor: not-allowed; }
+    .btn-secondary {
+      background: transparent;
+      border: 1px dashed var(--border-color);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      padding: 8px 14px;
+      margin-top: 10px;
+    }
+    .btn-secondary:hover { border-color: var(--accent-color); color: var(--accent-color); }
+    
+    .player-row {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 10px;
+      position: relative;
+    }
+    .player-row-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .remove-row-btn {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      background: none;
+      border: none;
+      color: var(--red);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0;
+      width: auto;
+      margin: 0;
+    }
+
     .success { color: var(--green); text-align: center; font-weight: bold; margin-top: 10px; display: none; }
     .error-msg { color: var(--red); text-align: center; font-size: 0.85rem; margin-top: 10px; display: none; }
     .auth-box { text-align: center; padding: 40px 20px; }
@@ -66,10 +104,10 @@
   <div class="container">
     <h1>🎪 Панель организатора</h1>
 
-    <!-- Блок авторизации по токену -->
+    <!-- Авторизация -->
     <div id="auth-section" class="card auth-box">
       <h3>🔐 Авторизация</h3>
-      <p style="color: var(--text-muted); font-size: 0.85rem;">Введите ваш GitHub Personal Access Token:</p>
+      <p style="color: var(--text-muted); font-size: 0.85rem;">Введите ваш Personal Access Token от GitHub:</p>
       <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx">
       <button onclick="saveToken()">Войти</button>
     </div>
@@ -77,40 +115,48 @@
     <!-- Основная админка -->
     <div id="admin-section" style="display: none;">
       
-      <!-- Форма добавления участника -->
+      <!-- Добавление игрока в базу -->
       <div class="card">
-        <h3>👥 Добавить участника</h3>
-        <label>Имя игрока / Никнейм</label>
+        <h3>👥 Добавить нового участника в базу</h3>
+        <label>Имя / Никнейм</label>
         <input type="text" id="player-name" placeholder="Например: Андрей">
-        <label>Любимый генерал / Комментарий</label>
+        <label>Любимый генерал / Заметки</label>
         <input type="text" id="player-cmd" placeholder="Например: Lumra">
         <button id="btn-player" onclick="createPlayer()">Сохранить участника</button>
         <div id="player-success" class="success">Участник успешно добавлен! 🎉</div>
         <div id="player-error" class="error-msg"></div>
       </div>
 
-      <!-- Форма добавления турнира -->
+      <!-- Создание отчета -->
       <div class="card">
-        <h3>🏆 Добавить отчёт о турнире</h3>
+        <h3>🏆 Опубликовать отчёт о турнире</h3>
         <label>Название турнира</label>
         <input type="text" id="event-title" value="EDH Встреча">
-        <label>Дата проведения</label>
-        <input type="date" id="event-date">
+        
+        <div style="display: flex; gap: 10px;">
+          <div style="flex: 1;">
+            <label>Дата проведения</label>
+            <input type="date" id="event-date">
+          </div>
+          <div style="flex: 1;">
+            <label>Всего участников</label>
+            <input type="number" id="event-count" value="12">
+          </div>
+        </div>
+
         <label>Формат / Брекет</label>
         <input type="text" id="event-format" value="Commander / Bracket 3">
-        <label>Количество участников</label>
-        <input type="number" id="event-count" value="12">
-        
-        <label>Победитель (1 место) — необязательно</label>
-        <input type="text" id="winner-name" placeholder="Например: Андрей">
-        <label>Ссылка на Moxfield — необязательно</label>
-        <input type="text" id="winner-mox" placeholder="https://www.moxfield.com/decks/...">
 
-        <label>Заметки / Описание турнира</label>
-        <textarea id="event-body" rows="3" placeholder="Итоги встреч, ключевые моменты, финалисты..."></textarea>
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0 10px;">
+        <h4 style="margin: 0; color: #fff;">📊 Результаты участников</h4>
+        <div id="results-container"></div>
+        <button type="button" class="btn-secondary" onclick="addResultRow()">+ Добавить участника в таблицу</button>
 
-        <button id="btn-event" onclick="createEvent()">Опубликовать отчёт</button>
-        <div id="event-success" class="success">Отчёт успешно опубликован на сайте! 🚀</div>
+        <label style="margin-top: 20px;">Заметки / Описание турнира</label>
+        <textarea id="event-body" rows="3" placeholder="Заметки по метагейму, ключевым партиям..."></textarea>
+
+        <button id="btn-event" onclick="createEvent()">Опубликовать отчёт на сайте</button>
+        <div id="event-success" class="success">Отчёт успешно опубликован! 🚀</div>
         <div id="event-error" class="error-msg"></div>
       </div>
 
@@ -143,10 +189,53 @@
         document.getElementById('auth-section').style.display = 'none';
         document.getElementById('admin-section').style.display = 'block';
         document.getElementById('event-date').valueAsDate = new Date();
+        if (document.getElementById('results-container').children.length === 0) {
+          addResultRow('🥇 1 место');
+          addResultRow('🥈 2 место');
+        }
       } else {
         document.getElementById('auth-section').style.display = 'block';
         document.getElementById('admin-section').style.display = 'none';
       }
+    }
+
+    function addResultRow(defaultPlace = 'Участник') {
+      const container = document.getElementById('results-container');
+      const rowId = 'row-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+      
+      const row = document.createElement('div');
+      row.className = 'player-row';
+      row.id = rowId;
+      row.innerHTML = `
+        <button type="button" class="remove-row-btn" onclick="document.getElementById('${rowId}').remove()">✕</button>
+        <div class="player-row-grid">
+          <div>
+            <label style="margin-top:0;">Место / Награда</label>
+            <select class="res-place">
+              <option value="🥇 1 место" ${defaultPlace === '🥇 1 место' ? 'selected' : ''}>🥇 1 место</option>
+              <option value="🥈 2 место" ${defaultPlace === '🥈 2 место' ? 'selected' : ''}>🥈 2 место</option>
+              <option value="🥉 3 место" ${defaultPlace === '🥉 3 место' ? 'selected' : ''}>🥉 3 место</option>
+              <option value="4 место / Финалист" ${defaultPlace === '4 место / Финалист' ? 'selected' : ''}>4 место / Финалист</option>
+              <option value="Участник" ${defaultPlace === 'Участник' ? 'selected' : ''}>Участник</option>
+            </select>
+          </div>
+          <div>
+            <label style="margin-top:0;">Имя игрока</label>
+            <input type="text" class="res-name" placeholder="Имя / Никнейм">
+          </div>
+        </div>
+        <div class="player-row-grid" style="margin-top: 6px;">
+          <div>
+            <label style="margin-top:0;">Командир / Колода</label>
+            <input type="text" class="res-commander" placeholder="Напр: Lumra">
+          </div>
+          <div>
+            <label style="margin-top:0;">Ссылка на Moxfield</label>
+            <input type="text" class="res-mox" placeholder="https://moxfield.com/...">
+          </div>
+        </div>
+      `;
+      container.appendChild(row);
     }
 
     function slugify(text) {
@@ -233,8 +322,6 @@
       const date = document.getElementById('event-date').value;
       const format = document.getElementById('event-format').value.trim() || "Commander / Bracket 3";
       const count = document.getElementById('event-count').value || 12;
-      const winner = document.getElementById('winner-name').value.trim();
-      const mox = document.getElementById('winner-mox').value.trim();
       const bodyText = document.getElementById('event-body').value.trim();
 
       errBox.style.display = 'none';
@@ -243,24 +330,34 @@
       btn.disabled = true;
       btn.innerText = 'Публикация... ⏳';
 
+      // Собираем результаты всех участников из формы
+      const rows = document.querySelectorAll('#results-container .player-row');
+      let resultsYaml = '';
+      
+      if (rows.length > 0) {
+        resultsYaml = 'results:\n';
+        rows.forEach(row => {
+          const place = row.querySelector('.res-place').value;
+          const pName = row.querySelector('.res-name').value.trim();
+          const commander = row.querySelector('.res-commander').value.trim();
+          const mox = row.querySelector('.res-mox').value.trim();
+
+          if (pName) {
+            resultsYaml += `  - place: "${place}"\n    player_name: "${pName}"\n`;
+            if (commander) resultsYaml += `    commander: "${commander}"\n`;
+            if (mox) resultsYaml += `    moxfield_url: "${mox}"\n`;
+          }
+        });
+      }
+
       const slug = slugify(title);
       const filename = `content/events/${date}-${slug}.md`;
 
-      let content = `---\ntitle: "${title}"\ndate: "${date}"\nformat: "${format}"\nplayers_count: ${count}\n`;
-      
-      if (winner) {
-        content += `results:\n  - place: "🥇 1 место"\n    player_name: "${winner}"\n`;
-        if (mox) {
-          content += `    moxfield_url: "${mox}"\n`;
-        }
-      }
-      content += `---\n${bodyText}\n`;
+      const content = `---\ntitle: "${title}"\ndate: "${date}"\nformat: "${format}"\nplayers_count: ${count}\n${resultsYaml}---\n${bodyText}\n`;
 
       try {
         await commitToGitHub(filename, content, `Add tournament report ${date}`);
         document.getElementById('event-success').style.display = 'block';
-        document.getElementById('winner-name').value = '';
-        document.getElementById('winner-mox').value = '';
         document.getElementById('event-body').value = '';
         setTimeout(() => document.getElementById('event-success').style.display = 'none', 4000);
       } catch (e) {
@@ -268,7 +365,7 @@
         errBox.style.display = 'block';
       } finally {
         btn.disabled = false;
-        btn.innerText = 'Опубликовать отчёт';
+        btn.innerText = 'Опубликовать отчёт на сайте';
       }
     }
 
