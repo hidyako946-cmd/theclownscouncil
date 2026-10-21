@@ -6,22 +6,22 @@ media_folder: "assets/uploads"
 public_folder: "/assets/uploads"
 
 collections:
-  # 1. Коллекция для быстрого управления списком участников
+  # 1. База участников мероприятий
   - name: "players"
-    label: "👥 Участники лиги"
-    label_singular: "Участник"
+    label: "👥 Участники мероприятий"
+    label_singular: "Участник мероприятия"
     folder: "content/players"
     create: true
     slug: "{{slug}}"
     summary: "{{fields.name}}"
     fields:
       - { label: "Имя игрока / Никнейм", name: "name", widget: "string" }
-      - { label: "Любимый генерал / Заметки", name: "favorite_commander", widget: "string", required: false, hint: "Например: Lumra, 20000th Leaf" }
+      - { label: "Любимый генерал / Заметки", name: "favorite_commander", widget: "string", required: false, hint: "Например: Lumra, Okaun / Zndrsplt" }
 
-  # 2. Коллекция отчётов с динамической связкой игроков
+  # 2. Отчёты о турнирах
   - name: "events"
-    label: "🏆 Мероприятия и Отчёты"
-    label_singular: "Отчёт"
+    label: "🏆 Отчёты о турнирах"
+    label_singular: "Отчёт о турнире"
     folder: "content/events"
     create: true
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
@@ -46,7 +46,7 @@ collections:
               - "🥉 3 место"
               - "4 место / Финалист"
               - "Участник"
-          - label: "Имя игрока"
+          - label: "Участник мероприятия"
             name: "player_name"
             widget: "relation"
             collection: "players"
