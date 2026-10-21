@@ -65,7 +65,7 @@
     <!-- Блок авторизации по токену -->
     <div id="auth-section" class="card auth-box">
       <h3>🔐 Авторизация</h3>
-      <p style="color: var(--text-muted); font-size: 0.85rem;">Введите ваш GitHub Personal Access Token (хранится только в вашем браузере):</p>
+      <p style="color: var(--text-muted); font-size: 0.85rem;">Введите ваш GitHub Personal Access Token:</p>
       <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx">
       <button onclick="saveToken()">Войти</button>
     </div>
@@ -78,7 +78,7 @@
         <h3>👥 Добавить участника</h3>
         <label>Имя игрока</label>
         <input type="text" id="player-name" placeholder="Например: Андрей">
-        <label>Любимый генерал / Коментарий</label>
+        <label>Любимый генерал / Комментарий</label>
         <input type="text" id="player-cmd" placeholder="Например: Lumra">
         <button onclick="createPlayer()">Сохранить участника</button>
         <div id="player-success" class="success">Участник успешно добавлен! 🎉</div>
@@ -147,7 +147,6 @@
       const token = getToken();
       const url = `https://api.github.com/repos/${REPO}/contents/${path}`;
       
-      // Проверяем, существует ли файл (нужно для получения sha при обновлении)
       let sha = null;
       const getRes = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
       if (getRes.ok) {
