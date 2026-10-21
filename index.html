@@ -15,7 +15,6 @@
       --text-muted: #a8a8b3;
       --border-color: #323238;
     }
-
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg-color);
@@ -24,31 +23,15 @@
       padding: 15px;
       line-height: 1.6;
     }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
+    .container { max-width: 900px; margin: 0 auto; }
     header {
       text-align: center;
       padding: 30px 0 15px;
       border-bottom: 2px solid var(--border-color);
       margin-bottom: 25px;
     }
-
-    h1 {
-      margin: 0;
-      font-size: 1.8rem;
-      color: #fff;
-    }
-
-    p.subtitle {
-      color: var(--text-muted);
-      margin-top: 6px;
-      font-size: 0.95rem;
-    }
-
+    h1 { margin: 0; font-size: 1.8rem; color: #fff; }
+    p.subtitle { color: var(--text-muted); margin-top: 6px; font-size: 0.95rem; }
     .admin-link {
       display: inline-block;
       margin-top: 12px;
@@ -59,12 +42,7 @@
       padding: 6px 14px;
       border-radius: 6px;
     }
-
-    .admin-link:hover {
-      color: var(--accent-hover);
-      border-color: var(--accent-color);
-    }
-
+    .admin-link:hover { color: var(--accent-hover); border-color: var(--accent-color); }
     .empty-state {
       text-align: center;
       background-color: var(--card-bg);
@@ -73,7 +51,6 @@
       padding: 40px 20px;
       margin-bottom: 30px;
     }
-
     footer {
       text-align: center;
       color: var(--text-muted);
@@ -85,32 +62,28 @@
   </style>
 </head>
 <body>
-
   <div class="container">
     <header>
       <h1>🎪 The Clown's Council</h1>
       <p class="subtitle">Отчёты о турнирах EDH Commander, метагейм и сводки колод</p>
-      <a href="https://embed-6ad8439a6f9e90af9bc4b2c7--theclownscounci.netlify.app/admin/#/" class="admin-link">⚙️ Панель организатора</a>
+      <a href="/admin/" class="admin-link">⚙️ Панель организатора</a>
     </header>
-
     <main id="reports-list">
       <div class="empty-state">
         <h2>Турниров пока не зафиксировано 🎲</h2>
         <p>Отчёты появятся сразу после добавления первого мероприятия через панель организатора.</p>
       </div>
     </main>
-
     <footer>
       <p>© The Clown's Council</p>
     </footer>
   </div>
-
   <script>
     if (window.netlifyIdentity) {
       window.netlifyIdentity.on("init", user => {
         if (!user) {
           window.netlifyIdentity.on("login", () => {
-            document.location.href = "https://embed-6ad8439a6f9e90af9bc4b2c7--theclownscounci.netlify.app/admin/#/";
+            document.location.href = "/admin/";
           });
         }
       });
