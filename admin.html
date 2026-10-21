@@ -25,15 +25,17 @@
       padding: 20px;
     }
     .container { max-width: 700px; margin: 0 auto; }
+    
     .admin-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
       padding-bottom: 15px;
       border-bottom: 1px solid var(--border-color);
     }
     .admin-header h1 { font-size: 1.4rem; color: #fff; margin: 0; }
+    
     .back-btn {
       color: var(--text-muted);
       text-decoration: none;
@@ -42,26 +44,41 @@
       padding: 6px 14px;
       border-radius: 8px;
       background: var(--card-bg);
+      cursor: pointer;
     }
-    .admin-tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 10px;
+    .back-btn:hover { color: #fff; border-color: var(--accent-color); }
+
+    /* Главное меню с кнопками */
+    .menu-grid {
+      display: grid;
+      gap: 15px;
+      margin-top: 20px;
     }
-    .tab-btn {
+    .menu-btn {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
-      color: var(--text-muted);
-      padding: 10px 16px;
-      border-radius: 8px;
-      cursor: pointer;
+      color: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      font-size: 1.1rem;
       font-weight: bold;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      transition: all 0.2s;
     }
-    .tab-btn.active { background: var(--accent-color); color: #fff; border-color: var(--accent-color); }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .menu-btn span { font-size: 1.5rem; }
+    .menu-btn:hover {
+      border-color: var(--accent-color);
+      background: rgba(255, 69, 0, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .section-view { display: none; }
+    .section-view.active { display: block; }
+
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -80,7 +97,7 @@
       font-size: 0.95rem;
       box-sizing: border-box;
     }
-    button {
+    button.action-btn {
       background: var(--accent-color);
       color: #fff;
       border: none;
@@ -92,7 +109,8 @@
       width: 100%;
       margin-top: 20px;
     }
-    button:hover { background: var(--accent-hover); }
+    button.action-btn:hover { background: var(--accent-hover); }
+    
     .btn-secondary {
       background: transparent;
       border: 1px dashed var(--border-color);
@@ -100,7 +118,12 @@
       font-size: 0.9rem;
       padding: 8px 14px;
       margin-top: 10px;
+      width: 100%;
+      cursor: pointer;
+      border-radius: 6px;
     }
+    .btn-secondary:hover { border-color: var(--accent-color); color: var(--accent-color); }
+    
     .item-row {
       display: flex;
       justify-content: space-between;
@@ -113,6 +136,7 @@
     }
     .item-info strong { color: #fff; }
     .item-info span { color: var(--text-muted); font-size: 0.85rem; display: block; }
+
     .player-row {
       background: rgba(0, 0, 0, 0.2);
       border: 1px solid var(--border-color);
@@ -139,28 +163,67 @@
 </head>
 <body>
   <div class="container">
+    
     <div class="admin-header">
       <h1>🎪 Панель организатора</h1>
       <a href="index.html" class="back-btn">← На сайт отчётов</a>
     </div>
 
+    <!-- Авторизация -->
     <div id="auth-section" class="card auth-box">
       <h3>🔐 Авторизация</h3>
       <p style="color: var(--text-muted); font-size: 0.85rem;">Введите ваш Personal Access Token от GitHub:</p>
       <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx">
-      <button type="button" onclick="saveToken()">Войти</button>
+      <button type="button" class="action-btn" onclick="saveToken()">Войти</button>
     </div>
 
+    <!-- Основная панель управления -->
     <div id="admin-section" style="display: none;">
-      <div class="admin-tabs">
-        <button type="button" class="tab-btn active" onclick="switchAdminTab('tab-events', event)">🏆 Прошедшие турниры</button>
-        <button type="button" class="tab-btn" onclick="switchAdminTab('tab-players', event)">👥 Участники</button>
+
+      <!-- РАЗДЕЛ 1: ГЛАВНОЕ МЕНЮ -->
+      <div id="view-menu" class="section-view active">
+        <div class="card" style="text-align: center; padding: 10px 0 20px; border:none; background:transparent;">
+          <h2 style="color: #fff; margin-bottom: 5px;">Главное меню</h2>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Выберите нужное действие:</p>
+        </div>
+
+        <div class="menu-grid">
+          <button class="menu-btn" onclick="openSection('view-create-event')">
+            <span>🏆</span>
+            <div>
+              <div>Создать отчёт о турнире</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal; margin-top: 2px;">Заполнить форму и опубликовать новый турнир</div>
+            </div>
+          </button>
+
+          <button class="menu-btn" onclick="openSection('view-manage-events')">
+            <span>📋</span>
+            <div>
+              <div>Редактировать отчёты</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal; margin-top: 2px;">Просмотр, изменение и удаление прошлых отчётов</div>
+            </div>
+          </button>
+
+          <button class="menu-btn" onclick="openSection('view-players')">
+            <span>👥</span>
+            <div>
+              <div>Список участников</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal; margin-top: 2px;">Управление базой игроков и их любимых генералов</div>
+            </div>
+          </button>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px;">
+          <button type="button" onclick="logout()" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); width: auto; padding: 6px 14px; font-size: 0.8rem; border-radius:6px; cursor:pointer;">Сбросить токен / Выйти</button>
+        </div>
       </div>
 
-      <!-- Вкладка: ТУРНИРЫ -->
-      <div id="tab-events" class="tab-content active">
+      <!-- РАЗДЕЛ 2: СОЗДАНИЕ / РЕДАКТИРОВАНИЕ ОТЧЕТА -->
+      <div id="view-create-event" class="section-view">
+        <button type="button" class="back-btn" onclick="openSection('view-menu')" style="margin-bottom: 15px;">← Назад в меню</button>
+        
         <div class="card">
-          <h3 id="event-form-title">🏆 Опубликовать отчёт о турнире</h3>
+          <h3 id="event-form-title" style="margin-top:0;">🏆 Создать отчёт о турнире</h3>
           <input type="hidden" id="event-file-name" value="">
 
           <label>Автор отчёта (Организатор)</label>
@@ -191,14 +254,18 @@
           <label style="margin-top: 20px;">Заметки / Описание турнира</label>
           <textarea id="event-body" rows="3" placeholder="Заметки по метагейму, ключевым партиям..."></textarea>
 
-          <button id="btn-event" type="button" onclick="createEvent()">Опубликовать отчёт на сайте</button>
-          <button id="btn-event-cancel" type="button" class="btn-secondary" style="display:none;" onclick="resetEventForm()">Отмена редактирования</button>
+          <button type="button" class="action-btn" onclick="createEvent()">Сохранить отчёт и в меню</button>
         </div>
+      </div>
 
+      <!-- РАЗДЕЛ 3: СПИСОК / УПРАВЛЕНИЕ ОТЧЕТАМИ -->
+      <div id="view-manage-events" class="section-view">
+        <button type="button" class="back-btn" onclick="openSection('view-menu')" style="margin-bottom: 15px;">← Назад в меню</button>
+        
         <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h3 style="margin: 0;">📋 Все опубликованные отчёты</h3>
-            <button type="button" class="btn-secondary" style="margin:0; padding: 4px 10px; font-size:0.8rem;" onclick="loadEventsList()">🔄 Обновить</button>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0;">📋 Управление отчётами</h3>
+            <button type="button" class="btn-secondary" style="width:auto; margin:0; padding: 4px 10px; font-size:0.8rem;" onclick="loadEventsList()">🔄 Обновить</button>
           </div>
           <div id="events-list-box">
             <div style="text-align:center; color: var(--text-muted); padding: 15px;">Загрузка списка отчётов...</div>
@@ -206,23 +273,25 @@
         </div>
       </div>
 
-      <!-- Вкладка: УЧАСТНИКИ -->
-      <div id="tab-players" class="tab-content">
+      <!-- РАЗДЕЛ 4: УЧАСТНИКИ -->
+      <div id="view-players" class="section-view">
+        <button type="button" class="back-btn" onclick="openSection('view-menu')" style="margin-bottom: 15px;">← Назад в меню</button>
+
         <div class="card">
-          <h3 id="player-form-title">➕ Добавить нового участника</h3>
+          <h3 id="player-form-title" style="margin-top:0;">➕ Добавить участника в базу</h3>
           <input type="hidden" id="player-file-slug" value="">
           <label>Имя / Никнейм</label>
           <input type="text" id="player-name" placeholder="Например: Андрей">
           <label>Любимый генерал / Заметки</label>
           <input type="text" id="player-cmd" placeholder="Например: Lumra">
-          <button type="button" onclick="savePlayer()">Сохранить участника</button>
+          <button type="button" class="action-btn" onclick="savePlayer()">Сохранить участника</button>
           <button id="btn-player-cancel" type="button" class="btn-secondary" style="display:none;" onclick="resetPlayerForm()">Отмена редактирования</button>
         </div>
 
         <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h3 style="margin: 0;">📋 Список всех участников</h3>
-            <button type="button" class="btn-secondary" style="margin:0; padding: 4px 10px; font-size:0.8rem;" onclick="loadPlayersList()">🔄 Обновить</button>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0;">👥 База участников</h3>
+            <button type="button" class="btn-secondary" style="width:auto; margin:0; padding: 4px 10px; font-size:0.8rem;" onclick="loadPlayersList()">🔄 Обновить</button>
           </div>
           <div id="players-list-box">
             <div style="text-align:center; color: var(--text-muted); padding: 15px;">Загрузка списка участников...</div>
@@ -230,9 +299,6 @@
         </div>
       </div>
 
-      <div style="text-align: center; margin-top: 30px;">
-        <button type="button" onclick="logout()" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); width: auto; padding: 6px 14px; font-size: 0.8rem;">Сбросить токен / Выйти</button>
-      </div>
     </div>
   </div>
 
@@ -255,22 +321,27 @@
       checkAuth();
     }
 
-    function switchAdminTab(tabId, evt) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-      if (evt && evt.target) evt.target.classList.add('active');
+    function openSection(sectionId) {
+      document.querySelectorAll('.section-view').forEach(el => el.classList.remove('active'));
+      document.getElementById(sectionId).classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      if (sectionId === 'view-manage-events') loadEventsList();
+      if (sectionId === 'view-players') loadPlayersList();
+      if (sectionId === 'view-create-event' && !document.getElementById('event-date').value) {
+        document.getElementById('event-date').value = new Date().toISOString().split('T')[0];
+        if (document.getElementById('results-container').children.length === 0) {
+          addResultRow('🥇 1 место');
+          addResultRow('🥈 2 место');
+        }
+      }
     }
 
     function checkAuth() {
       if (getToken()) {
         document.getElementById('auth-section').style.display = 'none';
         document.getElementById('admin-section').style.display = 'block';
-        if (!document.getElementById('event-date').value) {
-          document.getElementById('event-date').value = new Date().toISOString().split('T')[0];
-        }
         loadPlayersList();
-        loadEventsList();
       } else {
         document.getElementById('auth-section').style.display = 'block';
         document.getElementById('admin-section').style.display = 'none';
@@ -312,9 +383,7 @@
           const fileData = await getRes.json();
           sha = fileData.sha;
         }
-      } catch (e) {
-        // Игнорируем 404 ошибку, если файла ещё нет
-      }
+      } catch (e) {}
 
       const bodyData = {
         message: message,
@@ -422,11 +491,6 @@
           listContainer.appendChild(item);
         }
 
-        if (document.getElementById('results-container').children.length === 0) {
-          addResultRow('🥇 1 место');
-          addResultRow('🥈 2 место');
-        }
-
       } catch (e) {
         listContainer.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 10px;">Не удалось подгрузить участников</div>';
       }
@@ -449,12 +513,13 @@
       document.getElementById('player-file-slug').value = slug;
       document.getElementById('player-name').value = name;
       document.getElementById('player-cmd').value = commander;
-      document.getElementById('btn-player-cancel').style.display = 'inline-block';
+      const cancelBtn = document.getElementById('btn-player-cancel');
+      if (cancelBtn) cancelBtn.style.display = 'block';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function resetPlayerForm() {
-      document.getElementById('player-form-title').innerText = '➕ Добавить нового участника';
+      document.getElementById('player-form-title').innerText = '➕ Добавить участника в базу';
       document.getElementById('player-file-slug').value = '';
       document.getElementById('player-name').value = '';
       document.getElementById('player-cmd').value = '';
@@ -480,7 +545,7 @@
       }
     }
 
-    /* Управление турнирами / отчётами */
+    /* Управление отчётами */
     async function loadEventsList() {
       const listContainer = document.getElementById('events-list-box');
       const token = getToken();
@@ -562,9 +627,6 @@
       try {
         await deleteFromGitHub(`content/events/${fileName}`, `Delete tournament report ${title}`);
         alert('Отчёт успешно удален!');
-        if (document.getElementById('event-file-name').value === fileName) {
-          resetEventForm();
-        }
         await loadEventsList();
       } catch (e) {
         alert('Ошибка при удалении отчёта: ' + e.message);
@@ -596,13 +658,11 @@
         addResultRow('🥈 2 место');
       }
 
-      const cancelBtn = document.getElementById('btn-event-cancel');
-      if (cancelBtn) cancelBtn.style.display = 'inline-block';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      openSection('view-create-event');
     }
 
     function resetEventForm() {
-      document.getElementById('event-form-title').innerText = '🏆 Опубликовать отчёт о турнире';
+      document.getElementById('event-form-title').innerText = '🏆 Создать отчёт о турнире';
       document.getElementById('event-file-name').value = '';
       document.getElementById('event-title').value = 'EDH Встреча';
       document.getElementById('event-author').value = 'Андрей';
@@ -610,8 +670,6 @@
       document.getElementById('event-format').value = 'Commander / Bracket 3';
       document.getElementById('event-count').value = 12;
       document.getElementById('event-body').value = '';
-      const cancelBtn = document.getElementById('btn-event-cancel');
-      if (cancelBtn) cancelBtn.style.display = 'none';
 
       document.getElementById('results-container').innerHTML = '';
       addResultRow('🥇 1 место');
@@ -673,7 +731,6 @@
     }
 
     async function createEvent() {
-      const btn = document.getElementById('btn-event');
       const existingFileName = document.getElementById('event-file-name').value;
       const author = document.getElementById('event-author').value.trim() || "Организатор";
       const title = document.getElementById('event-title').value.trim() || "EDH Встреча";
@@ -681,9 +738,6 @@
       const format = document.getElementById('event-format').value.trim() || "Commander / Bracket 3";
       const count = document.getElementById('event-count').value || 12;
       const bodyText = document.getElementById('event-body').value.trim();
-
-      btn.disabled = true;
-      btn.innerText = 'Публикация... ⏳';
 
       const rows = document.querySelectorAll('#results-container .player-row');
       let resultsYamlArr = [];
@@ -719,14 +773,11 @@
 
       try {
         await commitToGitHub(filename, content, `Save tournament report ${date}`);
-        alert('🎉 Отчёт успешно сохранён на GitHub в папку content/events/!');
+        alert('🎉 Отчёт успешно сохранён на GitHub!');
         resetEventForm();
-        await loadEventsList();
+        openSection('view-menu'); // Возврат на главное меню
       } catch (e) {
-        alert(' Ошибка публикации: ' + e.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Опубликовать отчёт на сайте';
+        alert('Ошибка публикации: ' + e.message);
       }
     }
 
