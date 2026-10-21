@@ -6,16 +6,6 @@ media_folder: "assets/uploads"
 public_folder: "/assets/uploads"
 
 collections:
-  - name: "players"
-    label: "👥 Участники мероприятий"
-    label_singular: "Участник мероприятия"
-    folder: "content/players"
-    create: true
-    slug: "{{slug}}"
-    fields:
-      - { label: "Имя игрока / Никнейм", name: "name", widget: "string" }
-      - { label: "Любимый генерал / Заметки", name: "favorite_commander", widget: "string", required: false }
-
   - name: "events"
     label: "🏆 Отчёты о турнирах"
     label_singular: "Отчёт о турнире"
@@ -31,6 +21,7 @@ collections:
       - label: "Результаты участников"
         name: "results"
         widget: "list"
+        summary: '{{fields.place}}: {{fields.player_name}}'
         fields:
           - label: "Место / Награда"
             name: "place"
@@ -44,9 +35,13 @@ collections:
               - "Участник"
           - label: "Участник мероприятия"
             name: "player_name"
-            widget: "relation"
-            collection: "players"
-            search_fields: ["name"]
-            value_field: "name"
-            display_fields: ["name"]
+            widget: "select"
+            hint: "Выберите имя из списка"
+            options:
+              - "Андрей"
+              - "Екатерина"
+              - "Влад"
+              - "Артем"
+              - "Камиль"
+              - "Настя"
           - { label: "Ссылка на Moxfield", name: "moxfield_url", widget: "string", required: false }
