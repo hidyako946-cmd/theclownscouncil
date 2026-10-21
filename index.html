@@ -137,7 +137,7 @@
     .event-card.open .event-body-content { display: block; }
 
     .results-list { list-style: none; padding: 0; margin: 10px 0; }
-    .results-list li { padding: 4px 0; border-bottom: 1px dashed var(--border-color); font-size: 0.88rem; }
+    .results-list li { padding: 6px 0; border-bottom: 1px dashed var(--border-color); font-size: 0.88rem; }
     .moxfield-link { color: var(--accent-color); text-decoration: none; font-size: 0.82rem; margin-left: 6px; }
 
     .info-card {
@@ -305,8 +305,12 @@
 
     async function loadReports() {
       const container = document.getElementById('reports-list');
+      const token = localStorage.getItem('github_token'); // используем токен из админки, если вы залогинены
+      
       try {
-        const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/content/events`);
+        const headers = token ? { 'Authorization': `token ${token}` } : {};
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/content/events`, { headers });
+        
         if (!response.ok) {
           container.innerHTML = `<div style="text-align:center; padding: 30px; color: var(--text-muted);">Турниров пока не зафиксировано 🎲</div>`;
           return;
@@ -323,12 +327,22 @@
         container.innerHTML = '';
         const loadedReportsData = [];
 
+        // Перебираем файлы в обратном порядке (новые сверху)
         for (const [index, file] of mdFiles.reverse().entries()) {
-          const fileRes = await fetch(file.download_url);
-          if (!fileRes.ok) continue;
-          const fileText = await fileRes.text();
-          const { data, body } = parseFrontmatter(fileText);
+          // Читаем содержимое прямо из репозитория
+          const fileRes = await fetch(`content/events/${file.name}?v=` + Date.now());
+          let fileText = '';
+          
+          if (fileRes.ok) {
+            fileText = await fileRes.text();
+          } else if (file.download_url) {
+            const rawRes = await fetch(file.download_url);
+            if (rawRes.ok) fileText = await rawRes.text();
+          }
 
+          if (!fileText) continue;
+
+          const { data, body } = parseFrontmatter(fileText);
           loadedReportsData.push(data);
 
           const card = document.createElement('article');
@@ -339,6 +353,7 @@
             resultsHtml = '<ul class="results-list">' + data.results.map(r => `
               <li>
                 <strong>${r.place || ''}:</strong> ${r.player_name || 'Участник'}
+                ${r.commander ? `<span style="color: var(--text-muted);">(${r.commander})</span>` : ''}
                 ${r.moxfield_url ? `<a href="${r.moxfield_url}" target="_blank" class="moxfield-link">📋 Moxfield</a>` : ''}
               </li>
             `).join('') + '</ul>';
@@ -350,11 +365,11 @@
                 <div class="event-title">${data.title || 'EDH Встреча'}</div>
                 <div class="event-submeta">📅 ${data.date ? data.date.split('T')[0] : ''} | 👥 ${data.players_count || '-'} участников</div>
               </div>
-              <div class="event-toggle-icon">▼</div>
+              <div style="font-size:0.8rem; color:var(--text-muted);">▼</div>
             </div>
             <div class="event-body-content">
               ${resultsHtml}
-              ${body && body.trim() ? `<div>${marked.parse(body)}</div>` : ''}
+              ${body && body.trim() ? `<div style="margin-top:10px;">${marked.parse(body)}</div>` : ''}
             </div>
           `;
 
