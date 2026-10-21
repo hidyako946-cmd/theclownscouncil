@@ -22,6 +22,25 @@ collections:
         widget: "list"
         summary: '{{fields.place}}: {{fields.player_name}}'
         fields:
-          - { label: "Место / Награда", name: "place", widget: "string", default: "🥇 1 место" }
-          - { label: "Имя игрока", name: "player_name", widget: "string" }
-          - { label: "Ссылка на Moxfield", name: "moxfield_url", widget: "string", hint: "Например: https://www.moxfield.com/decks/kL12xX_x0kG" }
+          - label: "Место / Награда"
+            name: "place"
+            widget: "select"
+            default: "🥇 1 место"
+            options:
+              - "🥇 1 место"
+              - "🥈 2 место"
+              - "🥉 3 место"
+              - "4 место / Финалист"
+              - "Участник"
+          - label: "Имя игрока"
+            name: "player_name"
+            widget: "select"
+            hint: "Выберите из списка или введите имя нового игрока"
+            options:
+              - "Андрей"
+              - "Екатерина"
+              - "Влад"
+              - "Артем"
+              - "Камиль"
+              - "Настя"
+          - { label: "Ссылка на Moxfield", name: "moxfield_url", widget: "string", required: false, hint: "https://www.moxfield.com/decks/..." }
