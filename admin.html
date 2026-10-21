@@ -70,7 +70,6 @@
       margin-bottom: 20px;
     }
     label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; margin-top: 12px; }
-    .req { color: var(--red); font-weight: bold; }
     input, select, textarea {
       width: 100%;
       background: #121214;
@@ -164,15 +163,15 @@
           <h3 id="event-form-title">🏆 Опубликовать отчёт о турнире</h3>
           <input type="hidden" id="event-file-name" value="">
 
-          <label>Автор отчёта (Организатор) <span class="req">*</span></label>
-          <input type="text" id="event-author" value="Андрей">
+          <label>Автор отчёта (Организатор)</label>
+          <input type="text" id="event-author" value="Андрей" placeholder="Имя организатора">
 
-          <label>Название турнира <span class="req">*</span></label>
-          <input type="text" id="event-title" value="EDH Встреча">
+          <label>Название турнира</label>
+          <input type="text" id="event-title" value="EDH Встреча" placeholder="Название турнира">
           
           <div style="display: flex; gap: 10px;">
             <div style="flex: 1;">
-              <label>Дата проведения <span class="req">*</span></label>
+              <label>Дата проведения</label>
               <input type="date" id="event-date">
             </div>
             <div style="flex: 1;">
@@ -212,7 +211,7 @@
         <div class="card">
           <h3 id="player-form-title">➕ Добавить нового участника</h3>
           <input type="hidden" id="player-file-slug" value="">
-          <label>Имя / Никнейм <span class="req">*</span></label>
+          <label>Имя / Никнейм</label>
           <input type="text" id="player-name" placeholder="Например: Андрей">
           <label>Любимый генерал / Заметки</label>
           <input type="text" id="player-cmd" placeholder="Например: Lumra">
@@ -313,9 +312,7 @@
           const fileData = await getRes.json();
           sha = fileData.sha;
         }
-      } catch (e) {
-        // Если файла нет (404), sha остается null - это нормально для нового отчёта
-      }
+      } catch (e) {}
 
       const bodyData = {
         message: message,
@@ -459,11 +456,9 @@
     }
 
     async function savePlayer() {
-      const name = document.getElementById('player-name').value.trim();
+      const name = document.getElementById('player-name').value.trim() || 'Игрок';
       const cmd = document.getElementById('player-cmd').value.trim();
       const existingSlug = document.getElementById('player-file-slug').value;
-
-      if (!name) return alert('Введите имя участника!');
 
       const slug = existingSlug || slugify(name);
       const content = `---\nname: "${name}"\nfavorite_commander: "${cmd}"\n---\n`;
@@ -673,17 +668,12 @@
     async function createEvent() {
       const btn = document.getElementById('btn-event');
       const existingFileName = document.getElementById('event-file-name').value;
-      const author = document.getElementById('event-author').value.trim();
-      const title = document.getElementById('event-title').value.trim();
-      const date = document.getElementById('event-date').value;
+      const author = document.getElementById('event-author').value.trim() || "Организатор";
+      const title = document.getElementById('event-title').value.trim() || "EDH Встреча";
+      const date = document.getElementById('event-date').value || new Date().toISOString().split('T')[0];
       const format = document.getElementById('event-format').value.trim() || "Commander / Bracket 3";
       const count = document.getElementById('event-count').value || 12;
       const bodyText = document.getElementById('event-body').value.trim();
-
-      if (!title || !date || !author) {
-        alert('Заполните обязательные поля: Автор, Название и Дата!');
-        return;
-      }
 
       btn.disabled = true;
       btn.innerText = 'Публикация... ⏳';
