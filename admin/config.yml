@@ -1,0 +1,27 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "assets/uploads"
+public_folder: "/assets/uploads"
+
+collections:
+  - name: "events"
+    label: "Мероприятия и Отчёты"
+    folder: "content/events"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - { label: "Название турнира", name: "title", widget: "string", default: "EDH Встреча" }
+      - { label: "Дата проведения", name: "date", widget: "datetime", format: "YYYY-MM-DD" }
+      - { label: "Формат и Брекет", name: "format", widget: "string", default: "Commander / Bracket 3" }
+      - { label: "Количество участников", name: "players_count", widget: "number", default: 12 }
+      - { label: "Заметки по метагейму и хайлайты", name: "body", widget: "markdown", required: false }
+      - label: "Результаты участников"
+        name: "results"
+        widget: "list"
+        summary: '{{fields.place}}: {{fields.player_name}}'
+        fields:
+          - { label: "Место / Награда", name: "place", widget: "string", default: "🥇 1 место" }
+          - { label: "Имя игрока", name: "player_name", widget: "string" }
+          - { label: "Ссылка на Moxfield", name: "moxfield_url", widget: "string", hint: "Например: https://www.moxfield.com/decks/kL12xX_x0kG" }
