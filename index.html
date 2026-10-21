@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Clown's Council — EDH Community</title>
+  <!-- Подключаем надежный парсер YAML и Markdown -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <style>
@@ -243,43 +245,17 @@
       event.target.classList.add('active');
     }
 
+    // Использование профессионального парсера js-yaml для абсолютной надежности
     function parseFrontmatter(text) {
       const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
       if (!match) return { data: {}, body: text };
-      
-      const rawYaml = match[1];
-      const body = match[2];
-      const data = {};
-
-      let currentListKey = null;
-      let currentListItem = null;
-
-      rawYaml.split('\n').forEach(line => {
-        if (!line.trim()) return;
-        const keyVal = line.match(/^([a-zA-Z0-9_]+):\s*(.*)$/);
-        if (keyVal && !line.startsWith('  ')) {
-          const key = keyVal[1];
-          let val = keyVal[2].trim().replace(/^["']|["']$/g, '');
-          currentListKey = val === '' ? key : null;
-          data[key] = val === '' ? [] : val;
-          return;
-        }
-
-        if (currentListKey && line.trim().startsWith('- ')) {
-          currentListItem = {};
-          data[currentListKey].push(currentListItem);
-          const itemKeyVal = line.trim().substring(2).match(/^([a-zA-Z0-9_]+):\s*(.*)$/);
-          if (itemKeyVal) currentListItem[itemKeyVal[1]] = itemKeyVal[2].trim().replace(/^["']|["']$/g, '');
-          return;
-        }
-
-        if (currentListItem && line.startsWith('    ')) {
-          const itemKeyVal = line.trim().match(/^([a-zA-Z0-9_]+):\s*(.*)$/);
-          if (itemKeyVal) currentListItem[itemKeyVal[1]] = itemKeyVal[2].trim().replace(/^["']|["']$/g, '');
-        }
-      });
-
-      return { data, body };
+      try {
+        const data = jsyaml.load(match[1]) || {};
+        return { data, body: match[2] };
+      } catch (e) {
+        console.error("Ошибка чтения данных YAML:", e);
+        return { data: {}, body: match[2] };
+      }
     }
 
     function calculateStats(reports) {
@@ -299,7 +275,7 @@
           r.results.forEach(res => {
             const placeStr = (res.place || '').toLowerCase();
             if (placeStr.includes('1') || placeStr.includes('🥇')) {
-              const pName = res.player_name || 'Неизвестный';
+              const pName = res.player_name || 'Участник';
               winnersCount[pName] = (winnersCount[pName] || 0) + 1;
             }
           });
@@ -380,7 +356,7 @@
             </div>
             <div class="event-body-content">
               ${resultsHtml}
-              ${body.trim() ? `<div>${marked.parse(body)}</div>` : ''}
+              ${body && body.trim() ? `<div>${marked.parse(body)}</div>` : ''}
             </div>
           `;
 
