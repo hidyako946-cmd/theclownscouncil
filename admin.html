@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Clown's Council — Панель управления</title>
+  <!-- YAML Парсер -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
   <style>
     :root {
@@ -25,6 +26,7 @@
       padding: 20px;
     }
     .container { max-width: 700px; margin: 0 auto; }
+    
     .admin-header {
       display: flex;
       justify-content: space-between;
@@ -32,9 +34,15 @@
       margin-bottom: 20px;
       padding-bottom: 15px;
       border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 10px;
     }
     .admin-header h1 { font-size: 1.4rem; color: #fff; margin: 0; }
+    
     .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       color: var(--text-muted);
       text-decoration: none;
       font-size: 0.85rem;
@@ -42,7 +50,14 @@
       padding: 6px 14px;
       border-radius: 8px;
       background: var(--card-bg);
+      transition: all 0.2s;
     }
+    .back-btn:hover {
+      color: #fff;
+      border-color: var(--accent-color);
+      background: rgba(255, 69, 0, 0.1);
+    }
+
     .admin-tabs {
       display: flex;
       gap: 10px;
@@ -57,11 +72,20 @@
       padding: 10px 16px;
       border-radius: 8px;
       cursor: pointer;
+      font-size: 0.9rem;
       font-weight: bold;
+      transition: all 0.2s;
     }
-    .tab-btn.active { background: var(--accent-color); color: #fff; border-color: var(--accent-color); }
+    .tab-btn:hover { color: #fff; border-color: var(--accent-color); }
+    .tab-btn.active {
+      background: var(--accent-color);
+      color: #fff;
+      border-color: var(--accent-color);
+    }
+
     .tab-content { display: none; }
     .tab-content.active { display: block; }
+
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -71,6 +95,7 @@
     }
     label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; margin-top: 12px; }
     .req { color: var(--red); font-weight: bold; }
+
     input, select, textarea {
       width: 100%;
       background: #121214;
@@ -81,6 +106,7 @@
       font-size: 0.95rem;
       box-sizing: border-box;
     }
+
     button {
       background: var(--accent-color);
       color: #fff;
@@ -92,8 +118,11 @@
       cursor: pointer;
       width: 100%;
       margin-top: 20px;
+      transition: background 0.2s;
     }
     button:hover { background: var(--accent-hover); }
+    button:disabled { background: var(--border-color); cursor: not-allowed; }
+    
     .btn-secondary {
       background: transparent;
       border: 1px dashed var(--border-color);
@@ -102,6 +131,21 @@
       padding: 8px 14px;
       margin-top: 10px;
     }
+    .btn-secondary:hover { border-color: var(--accent-color); color: var(--accent-color); }
+    
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(0, 0, 0, 0.2);
+      margin-bottom: 8px;
+      border-radius: 6px;
+    }
+    .item-info strong { color: #fff; }
+    .item-info span { color: var(--text-muted); font-size: 0.85rem; display: block; }
+
     .player-row {
       background: rgba(0, 0, 0, 0.2);
       border: 1px solid var(--border-color);
@@ -110,22 +154,45 @@
       margin-top: 10px;
       position: relative;
     }
-    .player-row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .remove-row-btn {
-      position: absolute; top: 6px; right: 8px;
-      background: none; border: none; color: var(--red);
-      font-size: 1.1rem; cursor: pointer; padding: 0; width: auto; margin: 0;
+    .player-row-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
     }
+    .remove-row-btn {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      background: none;
+      border: none;
+      color: var(--red);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0;
+      width: auto;
+      margin: 0;
+    }
+
+    .action-btns { display: flex; gap: 6px; }
+    .btn-delete {
+      background: rgba(255, 77, 77, 0.15);
+      border: 1px solid var(--red);
+      color: var(--red);
+    }
+    .btn-delete:hover { background: var(--red); color: #fff; }
+
     .auth-box { text-align: center; padding: 40px 20px; }
   </style>
 </head>
 <body>
   <div class="container">
+    
     <div class="admin-header">
       <h1>🎪 Панель организатора</h1>
       <a href="index.html" class="back-btn">← На сайт отчётов</a>
     </div>
 
+    <!-- Авторизация -->
     <div id="auth-section" class="card auth-box">
       <h3>🔐 Авторизация</h3>
       <p style="color: var(--text-muted); font-size: 0.85rem;">Введите ваш Personal Access Token от GitHub:</p>
@@ -133,12 +200,15 @@
       <button type="button" onclick="saveToken()">Войти</button>
     </div>
 
+    <!-- Основная админка -->
     <div id="admin-section" style="display: none;">
+      
       <div class="admin-tabs">
         <button type="button" class="tab-btn active" onclick="switchAdminTab('tab-events', event)">🏆 Прошедшие турниры</button>
         <button type="button" class="tab-btn" onclick="switchAdminTab('tab-players', event)">👥 Участники</button>
       </div>
 
+      <!-- Вкладка: ТУРНИРЫ -->
       <div id="tab-events" class="tab-content active">
         <div class="card">
           <h3 id="event-form-title">🏆 Опубликовать отчёт о турнире</h3>
@@ -173,29 +243,56 @@
           <textarea id="event-body" rows="3" placeholder="Заметки по метагейму, ключевым партиям..."></textarea>
 
           <button id="btn-event" type="button" onclick="createEvent()">Опубликовать отчёт на сайте</button>
+          <button id="btn-event-cancel" type="button" class="btn-secondary" style="display:none;" onclick="resetEventForm()">Отмена редактирования</button>
+        </div>
+
+        <!-- Список созданных турниров с кнопками Редактировать / Удалить -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="margin: 0;">📋 Все опубликованные отчёты</h3>
+            <button type="button" class="btn-secondary" style="margin:0; padding: 4px 10px; font-size:0.8rem;" onclick="loadEventsList()">🔄 Обновить</button>
+          </div>
+          <div id="events-list-box">
+            <div style="text-align:center; color: var(--text-muted); padding: 15px;">Загрузка списка отчётов...</div>
+          </div>
         </div>
       </div>
 
+      <!-- Вкладка: УЧАСТНИКИ -->
       <div id="tab-players" class="tab-content">
         <div class="card">
-          <h3>➕ Добавить нового участника</h3>
+          <h3 id="player-form-title">➕ Добавить нового участника</h3>
           <input type="hidden" id="player-file-slug" value="">
           <label>Имя / Никнейм <span class="req">*</span></label>
           <input type="text" id="player-name" placeholder="Например: Андрей">
           <label>Любимый генерал / Заметки</label>
           <input type="text" id="player-cmd" placeholder="Например: Lumra">
           <button type="button" onclick="savePlayer()">Сохранить участника</button>
+          <button id="btn-player-cancel" type="button" class="btn-secondary" style="display:none;" onclick="resetPlayerForm()">Отмена редактирования</button>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="margin: 0;">📋 Список всех участников</h3>
+            <button type="button" class="btn-secondary" style="margin:0; padding: 4px 10px; font-size:0.8rem;" onclick="loadPlayersList()">🔄 Обновить</button>
+          </div>
+          <div id="players-list-box">
+            <div style="text-align:center; color: var(--text-muted); padding: 15px;">Загрузка списка участников...</div>
+          </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-top: 30px;">
         <button type="button" onclick="logout()" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); width: auto; padding: 6px 14px; font-size: 0.8rem;">Сбросить токен / Выйти</button>
       </div>
+
     </div>
   </div>
 
   <script>
     const REPO = 'hidyako946-cmd/theclownscouncil';
+    let globalPlayersCache = [];
+    let globalEventsCache = [];
 
     function getToken() { return localStorage.getItem('github_token'); }
 
@@ -225,10 +322,8 @@
         if (!document.getElementById('event-date').value) {
           document.getElementById('event-date').value = new Date().toISOString().split('T')[0];
         }
-        if (document.getElementById('results-container').children.length === 0) {
-          addResultRow('🥇 1 место');
-          addResultRow('🥈 2 место');
-        }
+        loadPlayersList();
+        loadEventsList();
       } else {
         document.getElementById('auth-section').style.display = 'block';
         document.getElementById('admin-section').style.display = 'none';
@@ -248,7 +343,6 @@
         .replace(/^-|-$/g, '') || 'vstrecha';
     }
 
-    // Безопасное кодирование UTF-8 в Base64 для корректного сохранения эмодзи и кириллицы
     function utf8ToBase64(str) {
       const bytes = new TextEncoder().encode(str);
       let binary = '';
@@ -294,6 +388,284 @@
       }
     }
 
+    async function deleteFromGitHub(path, message) {
+      const token = getToken();
+      if (!token) throw new Error('Отсутствует токен авторизации');
+
+      const url = `https://api.github.com/repos/${REPO}/contents/${path}`;
+      
+      const getRes = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
+      if (!getRes.ok) throw new Error('Файл не найден на GitHub');
+      
+      const fileData = await getRes.json();
+      const sha = fileData.sha;
+
+      const delRes = await fetch(url, {
+        method: 'DELETE',
+        headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, sha })
+      });
+
+      if (!delRes.ok) {
+        const err = await delRes.json();
+        throw new Error(err.message || 'Ошибка удаления файла');
+      }
+    }
+
+    /* Управление участниками */
+    async function loadPlayersList() {
+      const listContainer = document.getElementById('players-list-box');
+      const token = getToken();
+      try {
+        const res = await fetch(`https://api.github.com/repos/${REPO}/contents/content/players`, {
+          headers: token ? { 'Authorization': `token ${token}` } : {}
+        });
+        
+        if (!res.ok) {
+          listContainer.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 10px;">В базе пока нет участников</div>';
+          globalPlayersCache = [];
+          return;
+        }
+
+        const files = await res.json();
+        const mdFiles = files.filter(f => f.name && f.name.endsWith('.md'));
+        
+        globalPlayersCache = [];
+        listContainer.innerHTML = '';
+
+        for (const file of mdFiles) {
+          const fRes = await fetch(file.download_url);
+          if (!fRes.ok) continue;
+          const text = await fRes.text();
+          
+          let name = file.name.replace('.md', '');
+          let commander = '';
+          
+          const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+          if (match) {
+            try {
+              const parsed = jsyaml.load(match[1]);
+              if (parsed.name) name = parsed.name;
+              if (parsed.favorite_commander) commander = parsed.favorite_commander;
+            } catch (e) {}
+          }
+
+          const playerData = { slug: file.name.replace('.md', ''), name, commander };
+          globalPlayersCache.push(playerData);
+
+          const item = document.createElement('div');
+          item.className = 'item-row';
+          item.innerHTML = `
+            <div class="item-info">
+              <strong>${name}</strong>
+              ${commander ? `<span>Генерал: ${commander}</span>` : ''}
+            </div>
+            <div class="action-btns">
+              <button type="button" class="btn-secondary" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;" onclick="editPlayer('${playerData.slug}', '${name.replace(/'/g, "\\'")}', '${commander.replace(/'/g, "\\'")}')">✏️ Изм.</button>
+              <button type="button" class="btn-secondary btn-delete" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;" onclick="deletePlayer('${playerData.slug}', '${name.replace(/'/g, "\\'")}')">🗑️ Уд.</button>
+            </div>
+          `;
+          listContainer.appendChild(item);
+        }
+
+        if (document.getElementById('results-container').children.length === 0) {
+          addResultRow('🥇 1 место');
+          addResultRow('🥈 2 место');
+        }
+
+      } catch (e) {
+        listContainer.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 10px;">Не удалось подгрузить участников</div>';
+      }
+    }
+
+    async function deletePlayer(slug, name) {
+      if (!confirm(`Удалить участника "${name}"?`)) return;
+      try {
+        await deleteFromGitHub(`content/players/${slug}.md`, `Delete player ${name}`);
+        alert('Участник успешно удален!');
+        resetPlayerForm();
+        await loadPlayersList();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
+    }
+
+    function editPlayer(slug, name, commander) {
+      document.getElementById('player-form-title').innerText = '✏️ Редактировать участника';
+      document.getElementById('player-file-slug').value = slug;
+      document.getElementById('player-name').value = name;
+      document.getElementById('player-cmd').value = commander;
+      document.getElementById('btn-player-cancel').style.display = 'inline-block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetPlayerForm() {
+      document.getElementById('player-form-title').innerText = '➕ Добавить нового участника';
+      document.getElementById('player-file-slug').value = '';
+      document.getElementById('player-name').value = '';
+      document.getElementById('player-cmd').value = '';
+      const cancelBtn = document.getElementById('btn-player-cancel');
+      if (cancelBtn) cancelBtn.style.display = 'none';
+    }
+
+    async function savePlayer() {
+      const name = document.getElementById('player-name').value.trim();
+      const cmd = document.getElementById('player-cmd').value.trim();
+      const existingSlug = document.getElementById('player-file-slug').value;
+
+      if (!name) return alert('Введите имя участника!');
+
+      const slug = existingSlug || slugify(name);
+      const content = `---\nname: "${name}"\nfavorite_commander: "${cmd}"\n---\n`;
+
+      try {
+        await commitToGitHub(`content/players/${slug}.md`, content, `Save player ${name}`);
+        alert('Участник успешно сохранён!');
+        resetPlayerForm();
+        await loadPlayersList();
+      } catch (e) {
+        alert('Ошибка сохранения участника: ' + e.message);
+      }
+    }
+
+    /* Управление турнирами / отчётами */
+    async function loadEventsList() {
+      const listContainer = document.getElementById('events-list-box');
+      const token = getToken();
+      try {
+        const res = await fetch(`https://api.github.com/repos/${REPO}/contents/content/events`, {
+          headers: token ? { 'Authorization': `token ${token}` } : {}
+        });
+        
+        if (!res.ok) {
+          listContainer.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 10px;">Отчётов пока не создано</div>';
+          globalEventsCache = [];
+          return;
+        }
+
+        const files = await res.json();
+        const mdFiles = files.filter(f => f.name && f.name.endsWith('.md') && f.name !== '.gitkeep');
+        
+        globalEventsCache = [];
+        listContainer.innerHTML = '';
+
+        for (const file of mdFiles.reverse()) {
+          const fRes = await fetch(file.download_url);
+          if (!fRes.ok) continue;
+          const text = await fRes.text();
+          
+          let title = file.name.replace('.md', '');
+          let date = '';
+          let author = 'Организатор';
+          let parsedData = {};
+          let bodyText = '';
+
+          const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+          if (match) {
+            try {
+              parsedData = jsyaml.load(match[1]) || {};
+              bodyText = match[2] || '';
+              if (parsedData.title) title = parsedData.title;
+              if (parsedData.date) date = parsedData.date.split('T')[0];
+              if (parsedData.author) author = parsedData.author;
+            } catch (e) {}
+          }
+
+          const eventRecord = {
+            file_name: file.name,
+            title,
+            date,
+            author,
+            parsedData,
+            bodyText
+          };
+          globalEventsCache.push(eventRecord);
+
+          const item = document.createElement('div');
+          item.className = 'item-row';
+          item.innerHTML = `
+            <div class="item-info">
+              <strong>${title}</strong>
+              <span>📅 ${date || 'Без даты'} | 👤 Автор: ${author}</span>
+            </div>
+            <div class="action-btns">
+              <button type="button" class="btn-secondary" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;" onclick="editEvent('${file.name}')">✏️ Ред.</button>
+              <button type="button" class="btn-secondary btn-delete" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;" onclick="deleteEvent('${file.name}', '${title.replace(/'/g, "\\'")}')">🗑️ Уд.</button>
+            </div>
+          `;
+          listContainer.appendChild(item);
+        }
+
+        if (globalEventsCache.length === 0) {
+          listContainer.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 10px;">Отчётов пока не создано</div>';
+        }
+
+      } catch (e) {
+        listContainer.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 10px;">Не удалось загрузить отчёты</div>';
+      }
+    }
+
+    async function deleteEvent(fileName, title) {
+      if (!confirm(`Удалить отчёт "${title}"?`)) return;
+      try {
+        await deleteFromGitHub(`content/events/${fileName}`, `Delete tournament report ${title}`);
+        alert('Отчёт успешно удален!');
+        if (document.getElementById('event-file-name').value === fileName) {
+          resetEventForm();
+        }
+        await loadEventsList();
+      } catch (e) {
+        alert('Ошибка при удалении отчёта: ' + e.message);
+      }
+    }
+
+    function editEvent(fileName) {
+      const found = globalEventsCache.find(e => e.file_name === fileName);
+      if (!found) return;
+
+      document.getElementById('event-form-title').innerText = '✏️ Редактировать отчёт';
+      document.getElementById('event-file-name').value = found.file_name;
+      document.getElementById('event-title').value = found.title;
+      document.getElementById('event-author').value = found.author || 'Андрей';
+      if (found.date) document.getElementById('event-date').value = found.date;
+      document.getElementById('event-format').value = found.parsedData.format || 'Commander / Bracket 3';
+      document.getElementById('event-count').value = found.parsedData.players_count || 12;
+      document.getElementById('event-body').value = found.bodyText.trim();
+
+      const resultsContainer = document.getElementById('results-container');
+      resultsContainer.innerHTML = '';
+
+      if (found.parsedData.results && Array.isArray(found.parsedData.results)) {
+        found.parsedData.results.forEach(res => {
+          addResultRow(res.place || 'Участник', res.player_name || '', res.commander || '', res.moxfield_url || '');
+        });
+      } else {
+        addResultRow('🥇 1 место');
+        addResultRow('🥈 2 место');
+      }
+
+      const cancelBtn = document.getElementById('btn-event-cancel');
+      if (cancelBtn) cancelBtn.style.display = 'inline-block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetEventForm() {
+      document.getElementById('event-form-title').innerText = '🏆 Опубликовать отчёт о турнире';
+      document.getElementById('event-file-name').value = '';
+      document.getElementById('event-title').value = 'EDH Встреча';
+      document.getElementById('event-author').value = 'Андрей';
+      document.getElementById('event-date').value = new Date().toISOString().split('T')[0];
+      document.getElementById('event-format').value = 'Commander / Bracket 3';
+      document.getElementById('event-count').value = 12;
+      document.getElementById('event-body').value = '';
+      const cancelBtn = document.getElementById('btn-event-cancel');
+      if (cancelBtn) cancelBtn.style.display = 'none';
+
+      document.getElementById('results-container').innerHTML = '';
+      addResultRow('🥇 1 место');
+      addResultRow('🥈 2 место');
+    }
+
     function addResultRow(defaultPlace = 'Участник', defaultName = '', defaultCmd = '', defaultMox = '') {
       const container = document.getElementById('results-container');
       const rowId = 'row-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
@@ -333,26 +705,8 @@
       container.appendChild(row);
     }
 
-    async function savePlayer() {
-      const name = document.getElementById('player-name').value.trim();
-      const cmd = document.getElementById('player-cmd').value.trim();
-      if (!name) return alert('Введите имя участника!');
-
-      const slug = slugify(name);
-      const content = `---\nname: "${name}"\nfavorite_commander: "${cmd}"\n---\n`;
-
-      try {
-        await commitToGitHub(`content/players/${slug}.md`, content, `Add player ${name}`);
-        alert('🎉 Участник успешно сохранён на GitHub!');
-        document.getElementById('player-name').value = '';
-        document.getElementById('player-cmd').value = '';
-      } catch (e) {
-        alert(' Ошибка сохранения участника: ' + e.message);
-      }
-    }
-
     async function createEvent() {
-      const btn = document.getElementById('btn-event');
+      const existingFileName = document.getElementById('event-file-name').value;
       const author = document.getElementById('event-author').value.trim();
       const title = document.getElementById('event-title').value.trim();
       const date = document.getElementById('event-date').value;
@@ -361,17 +715,13 @@
       const bodyText = document.getElementById('event-body').value.trim();
 
       if (!title || !date || !author) {
-        alert(' Заполните обязательные поля: Автор, Название и Дата!');
+        alert('Заполните обязательные поля: Автор, Название и Дата!');
         return;
       }
 
-      btn.disabled = true;
-      btn.innerText = 'Публикация... ⏳';
-
       const rows = document.querySelectorAll('#results-container .player-row');
-      let resultsBlock = '';
-      let hasResults = false;
-
+      let resultsYamlArr = [];
+      
       rows.forEach(row => {
         const place = row.querySelector('.res-place').value;
         const pName = row.querySelector('.res-name').value.trim();
@@ -379,30 +729,35 @@
         const mox = row.querySelector('.res-mox').value.trim();
 
         if (pName) {
-          if (!hasResults) {
-            resultsBlock = 'results:\n';
-            hasResults = true;
-          }
-          resultsBlock += `  - place: "${place}"\n    player_name: "${pName}"\n`;
-          if (commander) resultsBlock += `    commander: "${commander}"\n`;
-          if (mox) resultsBlock += `    moxfield_url: "${mox}"\n`;
+          let rowObj = { place, player_name: pName };
+          if (commander) rowObj.commander = commander;
+          if (mox) rowObj.moxfield_url = mox;
+          resultsYamlArr.push(rowObj);
         }
       });
 
+      let resultsBlock = '';
+      if (resultsYamlArr.length > 0) {
+        resultsBlock = 'results:\n';
+        resultsYamlArr.forEach(r => {
+          resultsBlock += `  - place: "${r.place}"\n    player_name: "${r.player_name}"\n`;
+          if (r.commander) resultsBlock += `    commander: "${r.commander}"\n`;
+          if (r.moxfield_url) resultsBlock += `    moxfield_url: "${r.moxfield_url}"\n`;
+        });
+      }
+
       const slug = slugify(title);
-      const filename = `content/events/${date}-${slug}.md`;
+      const filename = existingFileName ? `content/events/${existingFileName}` : `content/events/${date}-${slug}.md`;
 
       const content = `---\ntitle: "${title}"\ndate: "${date}"\nauthor: "${author}"\nformat: "${format}"\nplayers_count: ${count}\n${resultsBlock}---\n${bodyText}\n`;
 
       try {
-        await commitToGitHub(filename, content, `Add tournament report ${date}`);
-        alert('🎉 Отчёт успешно сохранён на GitHub в папку content/events/!');
-        document.getElementById('event-body').value = '';
+        await commitToGitHub(filename, content, `Save tournament report ${date}`);
+        alert('🎉 Отчёт успешно сохранён на GitHub!');
+        resetEventForm();
+        await loadEventsList();
       } catch (e) {
-        alert(' Ошибка публикации отчёта: ' + e.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Опубликовать отчёт на сайте';
+        alert('Ошибка публикации: ' + e.message);
       }
     }
 
