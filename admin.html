@@ -106,9 +106,6 @@
       font-size: 0.95rem;
       box-sizing: border-box;
     }
-    input.invalid, select.invalid {
-      border-color: var(--red) !important;
-    }
 
     button {
       background: var(--accent-color);
@@ -184,8 +181,6 @@
     }
     .btn-delete:hover { background: var(--red); color: #fff; }
 
-    .success { color: var(--green); text-align: center; font-weight: bold; margin-top: 10px; display: none; }
-    .error-msg { color: var(--red); text-align: center; font-size: 0.85rem; margin-top: 10px; display: none; }
     .auth-box { text-align: center; padding: 40px 20px; }
   </style>
 </head>
@@ -217,7 +212,7 @@
       <div id="tab-events" class="tab-content active">
         <div class="card">
           <h3 id="event-form-title">🏆 Опубликовать отчёт о турнире</h3>
-          <input type="hidden" id="event-file-path" value="">
+          <input type="hidden" id="event-file-name" value="">
 
           <label>Автор отчёта (Организатор) <span class="req">*</span></label>
           <input type="text" id="event-author" value="Андрей" placeholder="Имя организатора">
@@ -249,8 +244,6 @@
 
           <button id="btn-event" type="button" onclick="createEvent()">Опубликовать отчёт на сайте</button>
           <button id="btn-event-cancel" type="button" class="btn-secondary" style="display:none;" onclick="resetEventForm()">Отмена редактирования</button>
-          <div id="event-success" class="success">Отчёт успешно сохранён! 🚀</div>
-          <div id="event-error" class="error-msg"></div>
         </div>
 
         <div class="card">
@@ -275,8 +268,6 @@
           <input type="text" id="player-cmd" placeholder="Например: Lumra">
           <button id="btn-player" type="button" onclick="savePlayer()">Сохранить участника</button>
           <button id="btn-player-cancel" type="button" class="btn-secondary" style="display:none;" onclick="resetPlayerForm()">Отмена редактирования</button>
-          <div id="player-success" class="success">Участник сохранен! 🎉</div>
-          <div id="player-error" class="error-msg"></div>
         </div>
 
         <div class="card">
@@ -329,7 +320,7 @@
         document.getElementById('auth-section').style.display = 'none';
         document.getElementById('admin-section').style.display = 'block';
         if (!document.getElementById('event-date').value) {
-          document.getElementById('event-date').valueAsDate = new Date();
+          document.getElementById('event-date').value = new Date().toISOString().split('T')[0];
         }
         loadPlayersList();
         loadEventsList();
@@ -367,9 +358,7 @@
         }
       } catch (e) {}
 
-      const encodedContent = btoa(encodeURIComponent(content).replace(/%([0-9A-F]{2})/g, function(match, p1) {
-        return String.fromCharCode('0x' + p1);
-      }));
+      const encodedContent = btoa(unescape(encodeURIComponent(content)));
 
       const bodyData = { message, content: encodedContent };
       if (sha) bodyData.sha = sha;
@@ -477,16 +466,14 @@
     }
 
     async function deletePlayer(slug, name) {
-      if (!confirm(`Вы уверены, что хотите удалить участника "${name}" из базы?`)) return;
-
+      if (!confirm(`Удалить участника "${name}"?`)) return;
       try {
         await deleteFromGitHub(`content/players/${slug}.md`, `Delete player ${name}`);
-        if (document.getElementById('player-file-slug').value === slug) {
-          resetPlayerForm();
-        }
+        alert('Участник успешно удален!');
+        resetPlayerForm();
         await loadPlayersList();
       } catch (e) {
-        alert('Ошибка при удалении: ' + e.message);
+        alert('Ошибка: ' + e.message);
       }
     }
 
@@ -505,45 +492,25 @@
       document.getElementById('player-name').value = '';
       document.getElementById('player-cmd').value = '';
       document.getElementById('btn-player-cancel').style.display = 'none';
-      document.getElementById('player-name').classList.remove('invalid');
     }
 
     async function savePlayer() {
-      const btn = document.getElementById('btn-player');
-      const errBox = document.getElementById('player-error');
-      const nameInput = document.getElementById('player-name');
-      const name = nameInput.value.trim();
+      const name = document.getElementById('player-name').value.trim();
       const cmd = document.getElementById('player-cmd').value.trim();
       const existingSlug = document.getElementById('player-file-slug').value;
 
-      errBox.style.display = 'none';
-      nameInput.classList.remove('invalid');
-
-      if (!name) {
-        nameInput.classList.add('invalid');
-        errBox.innerText = 'Пожалуйста, введите имя участника!';
-        errBox.style.display = 'block';
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerText = 'Сохранение... ⏳';
+      if (!name) return alert('Введите имя участника!');
 
       const slug = existingSlug || slugify(name);
       const content = `---\nname: "${name}"\nfavorite_commander: "${cmd}"\n---\n`;
 
       try {
-        await commitToGitHub(`content/players/${slug}.md`, content, `Update player ${name}`);
-        document.getElementById('player-success').style.display = 'block';
+        await commitToGitHub(`content/players/${slug}.md`, content, `Save player ${name}`);
+        alert('Участник успешно сохранён!');
         resetPlayerForm();
         await loadPlayersList();
-        setTimeout(() => document.getElementById('player-success').style.display = 'none', 3000);
       } catch (e) {
-        errBox.innerText = 'Ошибка: ' + e.message;
-        errBox.style.display = 'block';
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Сохранить участника';
+        alert('Ошибка сохранения участника: ' + e.message);
       }
     }
 
@@ -591,7 +558,6 @@
           }
 
           const eventRecord = {
-            path: `content/events/${file.name}`,
             file_name: file.name,
             title,
             date,
@@ -610,7 +576,7 @@
             </div>
             <div class="action-btns">
               <button type="button" class="btn-secondary" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;" onclick="editEvent('${file.name}')">✏️ Ред.</button>
-              <button type="button" class="btn-secondary btn-delete" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;" onclick="deleteEvent('content/events/${file.name}', '${title.replace(/'/g, "\\'")}')">🗑️ Уд.</button>
+              <button type="button" class="btn-secondary btn-delete" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;" onclick="deleteEvent('${file.name}', '${title.replace(/'/g, "\\'")}')">🗑️ Уд.</button>
             </div>
           `;
           listContainer.appendChild(item);
@@ -621,12 +587,12 @@
       }
     }
 
-    async function deleteEvent(path, title) {
-      if (!confirm(`Вы уверены, что хотите удалить отчёт "${title}"?`)) return;
-
+    async function deleteEvent(fileName, title) {
+      if (!confirm(`Удалить отчёт "${title}"?`)) return;
       try {
-        await deleteFromGitHub(path, `Delete tournament report ${title}`);
-        if (document.getElementById('event-file-path').value === path) {
+        await deleteFromGitHub(`content/events/${fileName}`, `Delete tournament report ${title}`);
+        alert('Отчёт успешно удален!');
+        if (document.getElementById('event-file-name').value === fileName) {
           resetEventForm();
         }
         await loadEventsList();
@@ -640,7 +606,7 @@
       if (!found) return;
 
       document.getElementById('event-form-title').innerText = '✏️ Редактировать отчёт';
-      document.getElementById('event-file-path').value = found.path;
+      document.getElementById('event-file-name').value = found.file_name;
       document.getElementById('event-title').value = found.title;
       document.getElementById('event-author').value = found.author || 'Андрей';
       if (found.date) document.getElementById('event-date').value = found.date;
@@ -666,18 +632,14 @@
 
     function resetEventForm() {
       document.getElementById('event-form-title').innerText = '🏆 Опубликовать отчёт о турнире';
-      document.getElementById('event-file-path').value = '';
+      document.getElementById('event-file-name').value = '';
       document.getElementById('event-title').value = 'EDH Встреча';
       document.getElementById('event-author').value = 'Андрей';
-      document.getElementById('event-date').valueAsDate = new Date();
+      document.getElementById('event-date').value = new Date().toISOString().split('T')[0];
       document.getElementById('event-format').value = 'Commander / Bracket 3';
       document.getElementById('event-count').value = 12;
       document.getElementById('event-body').value = '';
       document.getElementById('btn-event-cancel').style.display = 'none';
-
-      document.getElementById('event-title').classList.remove('invalid');
-      document.getElementById('event-date').classList.remove('invalid');
-      document.getElementById('event-author').classList.remove('invalid');
 
       document.getElementById('results-container').innerHTML = '';
       addResultRow('🥇 1 место');
@@ -739,39 +701,18 @@
     }
 
     async function createEvent() {
-      const btn = document.getElementById('btn-event');
-      const errBox = document.getElementById('event-error');
-      
-      const existingPath = document.getElementById('event-file-path').value;
-      const authorInput = document.getElementById('event-author');
-      const titleInput = document.getElementById('event-title');
-      const dateInput = document.getElementById('event-date');
-      
-      const author = authorInput.value.trim();
-      const title = titleInput.value.trim();
-      const date = dateInput.value;
+      const existingFileName = document.getElementById('event-file-name').value;
+      const author = document.getElementById('event-author').value.trim();
+      const title = document.getElementById('event-title').value.trim();
+      const date = document.getElementById('event-date').value;
       const format = document.getElementById('event-format').value.trim() || "Commander / Bracket 3";
       const count = document.getElementById('event-count').value || 12;
       const bodyText = document.getElementById('event-body').value.trim();
 
-      errBox.style.display = 'none';
-      authorInput.classList.remove('invalid');
-      titleInput.classList.remove('invalid');
-      dateInput.classList.remove('invalid');
-
-      let hasError = false;
-      if (!title) { titleInput.classList.add('invalid'); hasError = true; }
-      if (!date) { dateInput.classList.add('invalid'); hasError = true; }
-      if (!author) { authorInput.classList.add('invalid'); hasError = true; }
-
-      if (hasError) {
-        errBox.innerText = 'Заполните все обязательные поля (выделены красным)!';
-        errBox.style.display = 'block';
+      if (!title || !date || !author) {
+        alert('Заполните обязательные поля: Название, Дата и Автор!');
         return;
       }
-
-      btn.disabled = true;
-      btn.innerText = 'Публикация... ⏳';
 
       const rows = document.querySelectorAll('#results-container .player-row');
       let resultsYamlArr = [];
@@ -801,22 +742,18 @@
       }
 
       const slug = slugify(title);
-      const filename = existingPath || `content/events/${date}-${slug}.md`;
+      // Если это редактирование старого файла, используем его имя, иначе формируем новое
+      const filename = existingFileName ? `content/events/${existingFileName}` : `content/events/${date}-${slug}.md`;
 
       const content = `---\ntitle: "${title}"\ndate: "${date}"\nauthor: "${author}"\nformat: "${format}"\nplayers_count: ${count}\n${resultsBlock}---\n${bodyText}\n`;
 
       try {
         await commitToGitHub(filename, content, `Save tournament report ${date}`);
-        document.getElementById('event-success').style.display = 'block';
+        alert('🎉 Отчёт успешно сохранён на GitHub!');
         resetEventForm();
         await loadEventsList();
-        setTimeout(() => document.getElementById('event-success').style.display = 'none', 3000);
       } catch (e) {
-        errBox.innerText = 'Ошибка публикации: ' + e.message;
-        errBox.style.display = 'block';
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Опубликовать отчёт на сайте';
+        alert('Ошибка публикации: ' + e.message);
       }
     }
 
