@@ -742,7 +742,6 @@
       }
 
       const slug = slugify(title);
-      // Если это редактирование старого файла, используем его имя, иначе формируем новое
       const filename = existingFileName ? `content/events/${existingFileName}` : `content/events/${date}-${slug}.md`;
 
       const content = `---\ntitle: "${title}"\ndate: "${date}"\nauthor: "${author}"\nformat: "${format}"\nplayers_count: ${count}\n${resultsBlock}---\n${bodyText}\n`;
