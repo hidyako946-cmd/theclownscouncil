@@ -157,7 +157,7 @@
         <input type="text" id="player-name" placeholder="Например: Андрей">
         <label>Любимый генерал / Заметки</label>
         <input type="text" id="player-cmd" placeholder="Например: Lumra">
-        <button id="btn-player" onclick="createPlayer()">Сохранить участника</button>
+        <button id="btn-player" type="button" onclick="createPlayer()">Сохранить участника</button>
         <div id="player-success" class="success">Участник успешно добавлен! 🎉</div>
         <div id="player-error" class="error-msg"></div>
       </div>
@@ -190,13 +190,13 @@
         <label style="margin-top: 20px;">Заметки / Описание турнира</label>
         <textarea id="event-body" rows="3" placeholder="Заметки по метагейму, ключевым партиям..."></textarea>
 
-        <button id="btn-event" onclick="createEvent()">Опубликовать отчёт на сайте</button>
+        <button id="btn-event" type="button" onclick="createEvent()">Опубликовать отчёт на сайте</button>
         <div id="event-success" class="success">Отчёт успешно опубликован! 🚀</div>
         <div id="event-error" class="error-msg"></div>
       </div>
 
       <div style="text-align: center;">
-        <button onclick="logout()" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); width: auto; padding: 6px 14px; font-size: 0.8rem;">Сбросить токен / Выйти</button>
+        <button type="button" onclick="logout()" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); width: auto; padding: 6px 14px; font-size: 0.8rem;">Сбросить токен / Выйти</button>
       </div>
 
     </div>
@@ -223,7 +223,9 @@
       if (getToken()) {
         document.getElementById('auth-section').style.display = 'none';
         document.getElementById('admin-section').style.display = 'block';
-        document.getElementById('event-date').valueAsDate = new Date();
+        if (!document.getElementById('event-date').value) {
+          document.getElementById('event-date').valueAsDate = new Date();
+        }
         if (document.getElementById('results-container').children.length === 0) {
           addResultRow('🥇 1 место');
           addResultRow('🥈 2 место');
@@ -236,7 +238,7 @@
 
     function addResultRow(defaultPlace = 'Участник') {
       const container = document.getElementById('results-container');
-      const rowId = 'row-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+      const rowId = 'row-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
       
       const row = document.createElement('div');
       row.className = 'player-row';
@@ -288,6 +290,8 @@
 
     async function commitToGitHub(path, content, message) {
       const token = getToken();
+      if (!token) throw new Error('Отсутствует токен авторизации');
+
       const url = `https://api.github.com/repos/${REPO}/contents/${path}`;
       
       let sha = null;
@@ -299,9 +303,14 @@
         }
       } catch (e) {}
 
+      // Кодирование UTF-8 для корректной передачи кириллицы
+      const encodedContent = btoa(encodeURIComponent(content).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+        return String.fromCharCode('0x' + p1);
+      }));
+
       const bodyData = {
         message: message,
-        content: btoa(unescape(encodeURIComponent(content)))
+        content: encodedContent
       };
       if (sha) bodyData.sha = sha;
 
@@ -316,7 +325,7 @@
 
       if (!putRes.ok) {
         const err = await putRes.json();
-        throw new Error(err.message || 'Ошибка сохранения файла на GitHub');
+        throw new Error(err.message || 'Ошибка сохранения на GitHub');
       }
     }
 
@@ -360,29 +369,35 @@
       const bodyText = document.getElementById('event-body').value.trim();
 
       errBox.style.display = 'none';
-      if (!date) return alert('Выберите дату проведения!');
+      
+      if (!date) {
+        alert('Пожалуйста, выберите дату проведения турнира!');
+        return;
+      }
 
       btn.disabled = true;
       btn.innerText = 'Публикация... ⏳';
 
       const rows = document.querySelectorAll('#results-container .player-row');
       let resultsYaml = '';
+      let hasValidResults = false;
       
-      if (rows.length > 0) {
-        resultsYaml = 'results:\n';
-        rows.forEach(row => {
-          const place = row.querySelector('.res-place').value;
-          const pName = row.querySelector('.res-name').value.trim();
-          const commander = row.querySelector('.res-commander').value.trim();
-          const mox = row.querySelector('.res-mox').value.trim();
+      rows.forEach(row => {
+        const place = row.querySelector('.res-place').value;
+        const pName = row.querySelector('.res-name').value.trim();
+        const commander = row.querySelector('.res-commander').value.trim();
+        const mox = row.querySelector('.res-mox').value.trim();
 
-          if (pName) {
-            resultsYaml += `  - place: "${place}"\n    player_name: "${pName}"\n`;
-            if (commander) resultsYaml += `    commander: "${commander}"\n`;
-            if (mox) resultsYaml += `    moxfield_url: "${mox}"\n`;
+        if (pName) {
+          if (!hasValidResults) {
+            resultsYaml = 'results:\n';
+            hasValidResults = true;
           }
-        });
-      }
+          resultsYaml += `  - place: "${place}"\n    player_name: "${pName}"\n`;
+          if (commander) resultsYaml += `    commander: "${commander}"\n`;
+          if (mox) resultsYaml += `    moxfield_url: "${mox}"\n`;
+        }
+      });
 
       const slug = slugify(title);
       const filename = `content/events/${date}-${slug}.md`;
