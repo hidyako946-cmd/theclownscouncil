@@ -6,19 +6,16 @@ media_folder: "assets/uploads"
 public_folder: "/assets/uploads"
 
 collections:
-  # 1. База участников мероприятий
   - name: "players"
     label: "👥 Участники мероприятий"
     label_singular: "Участник мероприятия"
     folder: "content/players"
     create: true
     slug: "{{slug}}"
-    summary: "{{fields.name}}"
     fields:
       - { label: "Имя игрока / Никнейм", name: "name", widget: "string" }
-      - { label: "Любимый генерал / Заметки", name: "favorite_commander", widget: "string", required: false, hint: "Например: Lumra, Okaun / Zndrsplt" }
+      - { label: "Любимый генерал / Заметки", name: "favorite_commander", widget: "string", required: false }
 
-  # 2. Отчёты о турнирах
   - name: "events"
     label: "🏆 Отчёты о турнирах"
     label_singular: "Отчёт о турнире"
@@ -30,11 +27,10 @@ collections:
       - { label: "Дата проведения", name: "date", widget: "datetime", format: "YYYY-MM-DD" }
       - { label: "Формат и Брекет", name: "format", widget: "string", default: "Commander / Bracket 3" }
       - { label: "Количество участников", name: "players_count", widget: "number", default: 12 }
-      - { label: "Заметки по метагейму и хайлайты", name: "body", widget: "markdown", required: false }
+      - { label: "Заметки по метагейму", name: "body", widget: "markdown", required: false }
       - label: "Результаты участников"
         name: "results"
         widget: "list"
-        summary: '{{fields.place}}: {{fields.player_name}}'
         fields:
           - label: "Место / Награда"
             name: "place"
@@ -53,5 +49,4 @@ collections:
             search_fields: ["name"]
             value_field: "name"
             display_fields: ["name"]
-            hint: "Выберите игрока из базы"
-          - { label: "Ссылка на Moxfield", name: "moxfield_url", widget: "string", required: false, hint: "https://www.moxfield.com/decks/..." }
+          - { label: "Ссылка на Moxfield", name: "moxfield_url", widget: "string", required: false }
