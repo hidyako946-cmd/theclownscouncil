@@ -305,11 +305,8 @@
 
     async function loadReports() {
       const container = document.getElementById('reports-list');
-      const token = localStorage.getItem('github_token'); // используем токен из админки, если вы залогинены
-      
       try {
-        const headers = token ? { 'Authorization': `token ${token}` } : {};
-        const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/content/events`, { headers });
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/content/events`);
         
         if (!response.ok) {
           container.innerHTML = `<div style="text-align:center; padding: 30px; color: var(--text-muted);">Турниров пока не зафиксировано 🎲</div>`;
@@ -327,21 +324,11 @@
         container.innerHTML = '';
         const loadedReportsData = [];
 
-        // Перебираем файлы в обратном порядке (новые сверху)
         for (const [index, file] of mdFiles.reverse().entries()) {
-          // Читаем содержимое прямо из репозитория
-          const fileRes = await fetch(`content/events/${file.name}?v=` + Date.now());
-          let fileText = '';
+          const fileRes = await fetch(file.download_url);
+          if (!fileRes.ok) continue;
+          const fileText = await fileRes.text();
           
-          if (fileRes.ok) {
-            fileText = await fileRes.text();
-          } else if (file.download_url) {
-            const rawRes = await fetch(file.download_url);
-            if (rawRes.ok) fileText = await rawRes.text();
-          }
-
-          if (!fileText) continue;
-
           const { data, body } = parseFrontmatter(fileText);
           loadedReportsData.push(data);
 
@@ -363,7 +350,7 @@
             <div class="event-header" onclick="this.parentElement.classList.toggle('open')">
               <div>
                 <div class="event-title">${data.title || 'EDH Встреча'}</div>
-                <div class="event-submeta">📅 ${data.date ? data.date.split('T')[0] : ''} | 👥 ${data.players_count || '-'} участников</div>
+                <div class="event-submeta">📅 ${data.date ? data.date.split('T')[0] : ''} | 👥 ${data.players_count || '-'} участников | 👤 ${data.author || 'Андрей'}</div>
               </div>
               <div style="font-size:0.8rem; color:var(--text-muted);">▼</div>
             </div>
