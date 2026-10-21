@@ -1,4 +1,4 @@
 ---
-name: "ППП"
-favorite_commander: "ППП"
+name: "Андрей"
+favorite_commander: "Сисей"
 ---
