@@ -44,7 +44,6 @@
     }
     .admin-link:hover { color: var(--accent-hover); border-color: var(--accent-color); }
 
-    /* Навигация / Вкладки */
     .tabs-nav {
       display: flex;
       gap: 8px;
@@ -75,7 +74,6 @@
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
-    /* Блок статистики */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -111,7 +109,6 @@
       font-size: 0.9rem;
     }
 
-    /* Аккордеон / Сворачиваемые отчёты */
     .event-card {
       background-color: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -165,22 +162,21 @@
   <div class="container">
     <header>
       <h1>🎪 The Clown's Council</h1>
-      <p class="subtitle">EDH Commander Community & Tournament Hub</p>
+      <p class="subtitle">EDH Commander — Отчёты о турнирах и результаты встреч</p>
       <a href="https://theclownscouncil.netlify.app/admin/" class="admin-link">⚙️ Панель организатора</a>
     </header>
 
-    <!-- Переключатель вкладок -->
     <nav class="tabs-nav">
-      <button class="tab-btn active" onclick="switchTab('tab-reports')">🏆 Отчёты турниров</button>
+      <button class="tab-btn active" onclick="switchTab('tab-reports')">🏆 Результаты турниров</button>
       <button class="tab-btn" onclick="switchTab('tab-stats')">📊 Метагейм & Топ</button>
-      <button class="tab-btn" onclick="switchTab('tab-rules')">📜 Правила лиги</button>
-      <button class="tab-btn" onclick="switchTab('tab-about')">📍 О нас и бары</button>
+      <button class="tab-btn" onclick="switchTab('tab-rules')">📜 Правила турниров</button>
+      <button class="tab-btn" onclick="switchTab('tab-about')">📍 Инфо & Встречи</button>
     </nav>
 
-    <!-- Вкладка 1: Отчёты -->
+    <!-- Вкладка 1: Результаты -->
     <section id="tab-reports" class="tab-content active">
       <div id="reports-list">
-        <div style="text-align:center; padding: 30px; color: var(--text-muted);">Загрузка отчётов... 🎲</div>
+        <div style="text-align:center; padding: 30px; color: var(--text-muted);">Загрузка результатов... 🎲</div>
       </div>
     </section>
 
@@ -189,7 +185,7 @@
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-value" id="stat-total-events">0</div>
-          <div class="stat-label">Проведено ивентов</div>
+          <div class="stat-label">Проведено турниров</div>
         </div>
         <div class="stat-card">
           <div class="stat-value" id="stat-total-players">0</div>
@@ -202,7 +198,7 @@
       </div>
 
       <div class="champions-card">
-        <h3 style="margin: 0 0 10px; color: var(--gold); font-size: 1rem;">🏆 Зал Славы (Победители турниров)</h3>
+        <h3 style="margin: 0 0 10px; color: var(--gold); font-size: 1rem;">🏆 Победители турниров</h3>
         <ul id="top-players-list" class="top-players-list">
           <li style="color: var(--text-muted);">Статистика формируется...</li>
         </ul>
@@ -215,8 +211,8 @@
         <h3>⚔️ Регламент Commander (Bracket 3)</h3>
         <ul>
           <li><strong>Комбо-ограничения:</strong> Разрешены только комбо, сертифицированные под Bracket 3. Быстрые комбо строго запрещены на всех этапах партии (включая ходы после 7-го).</li>
-          <li><strong>Оформление:</strong> Разрешены золотобордерные карты.</li>
-          <li><strong>Подсчет очков:</strong> Все очки и паринги считаются программно через турбулярный софт.</li>
+          <li><strong>Карты:</strong> Разрешены золотобордерные карты.</li>
+          <li><strong>Подсчет очков:</strong> Все очки и паринги считаются программно через софт.</li>
         </ul>
       </div>
     </section>
@@ -224,9 +220,9 @@
     <!-- Вкладка 4: О нас -->
     <section id="tab-about" class="tab-content">
       <div class="info-card">
-        <h3>🎪 О сообществе «The Clown's Council»</h3>
-        <p>Мы играем в EDH Commander в разных барах города. Каждая встреча — это дружеская или соревновательная атмосфера, уникальные мета-сводки и призы.</p>
-        <p><strong>Организация и связь:</strong> Telegram <code>@hidya</code></p>
+        <h3>🎪 О встречах сообщества</h3>
+        <p>Мы играем в EDH Commander в разных барах. Каждая встреча — это дружеская или соревновательная атмосфера, актуальные отчёты и сводки колод.</p>
+        <p><strong>Регистрация и организация:</strong> Telegram <code>@hidya</code></p>
       </div>
     </section>
 
@@ -362,14 +358,13 @@
           loadedReportsData.push(data);
 
           const card = document.createElement('article');
-          // Первый отчёт раскрыт по умолчанию, остальные свернуты для компактности
           card.className = `event-card ${index === 0 ? 'open' : ''}`;
 
           let resultsHtml = '';
           if (data.results && Array.isArray(data.results)) {
             resultsHtml = '<ul class="results-list">' + data.results.map(r => `
               <li>
-                <strong>${r.place || ''}:</strong> ${r.player_name || 'Игрок'}
+                <strong>${r.place || ''}:</strong> ${r.player_name || 'Участник'}
                 ${r.moxfield_url ? `<a href="${r.moxfield_url}" target="_blank" class="moxfield-link">📋 Moxfield</a>` : ''}
               </li>
             `).join('') + '</ul>';
@@ -379,7 +374,7 @@
             <div class="event-header" onclick="this.parentElement.classList.toggle('open')">
               <div>
                 <div class="event-title">${data.title || 'EDH Встреча'}</div>
-                <div class="event-submeta">📅 ${data.date ? data.date.split('T')[0] : ''} | 👥 ${data.players_count || '-'} игроков</div>
+                <div class="event-submeta">📅 ${data.date ? data.date.split('T')[0] : ''} | 👥 ${data.players_count || '-'} участников</div>
               </div>
               <div class="event-toggle-icon">▼</div>
             </div>
@@ -396,7 +391,7 @@
 
       } catch (err) {
         console.error(err);
-        container.innerHTML = `<div style="text-align:center; padding: 30px; color: var(--text-muted);">Ошибка подгрузки отчётов ⚠️</div>`;
+        container.innerHTML = `<div style="text-align:center; padding: 30px; color: var(--text-muted);">Ошибка подгрузки результатов ⚠️</div>`;
       }
     }
 
