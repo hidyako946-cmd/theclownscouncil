@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Clown's Council — EDH Reports</title>
+  <!-- Подключаем обработчик Markdown для красивого отображения заметок -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <style>
     :root {
@@ -43,7 +45,40 @@
       border-radius: 6px;
     }
     .admin-link:hover { color: var(--accent-hover); border-color: var(--accent-color); }
-    .empty-state {
+    
+    .event-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .event-card h2 { margin-top: 0; color: #fff; font-size: 1.4rem; }
+    .event-meta {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+    .results-list {
+      list-style: none;
+      padding: 0;
+      margin: 15px 0;
+    }
+    .results-list li {
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--border-color);
+    }
+    .results-list li:last-child { border-bottom: none; }
+    .moxfield-link {
+      color: var(--accent-color);
+      text-decoration: none;
+      font-size: 0.9rem;
+      margin-left: 8px;
+    }
+    .moxfield-link:hover { text-decoration: underline; }
+    .empty-state, .loading-state {
       text-align: center;
       background-color: var(--card-bg);
       border: 1px dashed var(--border-color);
@@ -66,20 +101,151 @@
     <header>
       <h1>🎪 The Clown's Council</h1>
       <p class="subtitle">Отчёты о турнирах EDH Commander, метагейм и сводки колод</p>
-      <!-- Ссылка ведет на постоянный адрес админки Netlify -->
       <a href="https://theclownscouncil.netlify.app/admin/" class="admin-link">⚙️ Панель организатора</a>
     </header>
+
     <main id="reports-list">
-      <div class="empty-state">
-        <h2>Турниров пока не зафиксировано 🎲</h2>
-        <p>Отчёты появятся сразу после добавления первого мероприятия через панель организатора.</p>
+      <div class="loading-state">
+        <h2>Загрузка отчётов... 🎲</h2>
       </div>
     </main>
+
     <footer>
       <p>© The Clown's Council</p>
     </footer>
   </div>
+
   <script>
+    const GITHUB_USERNAME = 'hidyako946-cmd';
+    const REPO_NAME = 'theclownscouncil';
+
+    // Вспомогательная функция разбора Markdown Frontmatter (шапки файла)
+    function parseFrontmatter(text) {
+      const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+      if (!match) return { data: {}, body: text };
+      
+      const rawYaml = match[1];
+      const body = match[2];
+      const data = {};
+
+      let currentListKey = null;
+      let currentListItem = null;
+
+      rawYaml.split('\n').forEach(line => {
+        if (!line.trim()) return;
+        
+        // Поля верхнего уровня (key: value)
+        const keyVal = line.match(/^([a-zA-Z0-9_]+):\s*(.*)$/);
+        if (keyVal && !line.startsWith('  ')) {
+          const key = keyVal[1];
+          let val = keyVal[2].trim().replace(/^["']|["']$/g, '');
+          currentListKey = null;
+          
+          if (val === '') {
+            data[key] = [];
+            currentListKey = key;
+          } else {
+            data[key] = val;
+          }
+          return;
+        }
+
+        // Элементы списка (  - place: ...)
+        if (currentListKey && line.trim().startsWith('- ')) {
+          currentListItem = {};
+          data[currentListKey].push(currentListItem);
+          const itemKeyVal = line.trim().substring(2).match(/^([a-zA-Z0-9_]+):\s*(.*)$/);
+          if (itemKeyVal) {
+            currentListItem[itemKeyVal[1]] = itemKeyVal[2].trim().replace(/^["']|["']$/g, '');
+          }
+          return;
+        }
+
+        // Вложенные поля списка
+        if (currentListItem && line.startsWith('    ')) {
+          const itemKeyVal = line.trim().match(/^([a-zA-Z0-9_]+):\s*(.*)$/);
+          if (itemKeyVal) {
+            currentListItem[itemKeyVal[1]] = itemKeyVal[2].trim().replace(/^["']|["']$/g, '');
+          }
+        }
+      });
+
+      return { data, body };
+    }
+
+    async function loadReports() {
+      const container = document.getElementById('reports-list');
+      try {
+        // Получаем список файлов из папки content/events
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/content/events`);
+        
+        if (response.status === 404) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <h2>Турниров пока не зафиксировано 🎲</h2>
+              <p>Отчёты появятся сразу после добавления первого мероприятия через панель организатора.</p>
+            </div>`;
+          return;
+        }
+
+        const files = await response.json();
+        const mdFiles = files.filter(file => file.name.endsWith('.md'));
+
+        if (mdFiles.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <h2>Турниров пока не зафиксировано 🎲</h2>
+              <p>Отчёты появятся сразу после добавления первого мероприятия через панель организатора.</p>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = ''; // Очищаем статус загрузки
+
+        // Скачиваем и рендерим каждый отчёт
+        for (const file of mdFiles.reverse()) {
+          const fileRes = await fetch(file.download_url);
+          const fileText = await fileRes.text();
+          const { data, body } = parseFrontmatter(fileText);
+
+          const card = document.createElement('article');
+          card.className = 'event-card';
+
+          let resultsHtml = '';
+          if (data.results && Array.isArray(data.results)) {
+            resultsHtml = '<ul class="results-list">' + data.results.map(r => `
+              <li>
+                <strong>${r.place || ''}:</strong> ${r.player_name || 'Игрок'}
+                ${r.moxfield_url ? `<a href="${r.moxfield_url}" target="_blank" class="moxfield-link">📋 Колода на Moxfield</a>` : ''}
+              </li>
+            `).join('') + '</ul>';
+          }
+
+          card.innerHTML = `
+            <h2>${data.title || 'EDH Встреча'}</h2>
+            <div class="event-meta">
+              📅 ${data.date ? data.date.split('T')[0] : ''} | 
+              🏆 ${data.format || 'Commander'} | 
+              👥 Участников: ${data.players_count || '-'}
+            </div>
+            ${resultsHtml}
+            ${body.trim() ? `<div class="event-body">${marked.parse(body)}</div>` : ''}
+          `;
+
+          container.appendChild(card);
+        }
+      } catch (err) {
+        console.error(err);
+        container.innerHTML = `
+          <div class="empty-state">
+            <h2>Не удалось загрузить отчёты ⚠️</h2>
+            <p>Проверьте соединение с интернетом или настройки GitHub.</p>
+          </div>`;
+      }
+    }
+
+    loadReports();
+
     if (window.netlifyIdentity) {
       window.netlifyIdentity.on("init", user => {
         if (!user) {
