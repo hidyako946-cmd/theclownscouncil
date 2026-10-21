@@ -164,10 +164,10 @@
           <input type="hidden" id="event-file-name" value="">
 
           <label>Автор отчёта (Организатор)</label>
-          <input type="text" id="event-author" value="Андрей" placeholder="Имя организатора">
+          <input type="text" id="event-author" value="Андрей">
 
           <label>Название турнира</label>
-          <input type="text" id="event-title" value="EDH Встреча" placeholder="Название турнира">
+          <input type="text" id="event-title" value="EDH Встреча">
           
           <div style="display: flex; gap: 10px;">
             <div style="flex: 1;">
@@ -312,7 +312,9 @@
           const fileData = await getRes.json();
           sha = fileData.sha;
         }
-      } catch (e) {}
+      } catch (e) {
+        // Игнорируем 404 ошибку, если файла ещё нет
+      }
 
       const bodyData = {
         message: message,
@@ -341,11 +343,16 @@
 
       const url = `https://api.github.com/repos/${REPO}/contents/${path}`;
       
-      const getRes = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
-      if (!getRes.ok) throw new Error('Файл не найден на GitHub');
-      
-      const fileData = await getRes.json();
-      const sha = fileData.sha;
+      let sha = null;
+      try {
+        const getRes = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
+        if (getRes.ok) {
+          const fileData = await getRes.json();
+          sha = fileData.sha;
+        }
+      } catch (e) {}
+
+      if (!sha) throw new Error('Файл не найден на GitHub');
 
       const delRes = await fetch(url, {
         method: 'DELETE',
@@ -375,7 +382,7 @@
         }
 
         const files = await res.json();
-        const mdFiles = files.filter(f => f.name && f.name.endsWith('.md'));
+        const mdFiles = files.filter(f => f.name && f.name.endsWith('.md') && f.name !== '.gitkeep');
         
         globalPlayersCache = [];
         listContainer.innerHTML = '';
@@ -465,7 +472,7 @@
 
       try {
         await commitToGitHub(`content/players/${slug}.md`, content, `Save player ${name}`);
-        alert('Участник успешно сохранён!');
+        alert('Участник успешно сохранён на GitHub!');
         resetPlayerForm();
         await loadPlayersList();
       } catch (e) {
