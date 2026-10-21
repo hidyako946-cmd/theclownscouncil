@@ -13,6 +13,7 @@
       --text-muted: #a8a8b3;
       --border-color: #323238;
       --green: #00b37e;
+      --red: #ff4d4d;
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -57,6 +58,7 @@
     button:hover { background: #ff6347; }
     button:disabled { background: var(--border-color); cursor: not-allowed; }
     .success { color: var(--green); text-align: center; font-weight: bold; margin-top: 10px; display: none; }
+    .error-msg { color: var(--red); text-align: center; font-size: 0.85rem; margin-top: 10px; display: none; }
     .auth-box { text-align: center; padding: 40px 20px; }
   </style>
 </head>
@@ -78,36 +80,38 @@
       <!-- Форма добавления участника -->
       <div class="card">
         <h3>👥 Добавить участника</h3>
-        <label>Имя игрока</label>
+        <label>Имя игрока / Никнейм</label>
         <input type="text" id="player-name" placeholder="Например: Андрей">
         <label>Любимый генерал / Комментарий</label>
         <input type="text" id="player-cmd" placeholder="Например: Lumra">
         <button id="btn-player" onclick="createPlayer()">Сохранить участника</button>
         <div id="player-success" class="success">Участник успешно добавлен! 🎉</div>
+        <div id="player-error" class="error-msg"></div>
       </div>
 
       <!-- Форма добавления турнира -->
       <div class="card">
-        <h3>🏆 Добавить турнир / отчёт</h3>
+        <h3>🏆 Добавить отчёт о турнире</h3>
         <label>Название турнира</label>
         <input type="text" id="event-title" value="EDH Встреча">
-        <label>Дата</label>
+        <label>Дата проведения</label>
         <input type="date" id="event-date">
         <label>Формат / Брекет</label>
         <input type="text" id="event-format" value="Commander / Bracket 3">
         <label>Количество участников</label>
         <input type="number" id="event-count" value="12">
         
-        <label>Победитель (1 место)</label>
-        <input type="text" id="winner-name" placeholder="Имя победителя">
-        <label>Ссылка на колоду победителя (Moxfield)</label>
+        <label>Победитель (1 место) — необязательно</label>
+        <input type="text" id="winner-name" placeholder="Например: Андрей">
+        <label>Ссылка на Moxfield — необязательно</label>
         <input type="text" id="winner-mox" placeholder="https://www.moxfield.com/decks/...">
 
         <label>Заметки / Описание турнира</label>
-        <textarea id="event-body" rows="3" placeholder="Итоги встреч, интересные моменты..."></textarea>
+        <textarea id="event-body" rows="3" placeholder="Итоги встреч, ключевые моменты, финалисты..."></textarea>
 
         <button id="btn-event" onclick="createEvent()">Опубликовать отчёт</button>
         <div id="event-success" class="success">Отчёт успешно опубликован на сайте! 🚀</div>
+        <div id="event-error" class="error-msg"></div>
       </div>
 
       <div style="text-align: center;">
@@ -145,7 +149,6 @@
       }
     }
 
-    // Транслитерация кириллицы в латиницу для безопасных имён файлов
     function slugify(text) {
       const ru = {
         'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh',
@@ -156,7 +159,7 @@
       return text.toLowerCase().split('').map(char => ru[char] || char).join('')
         .replace(/[^a-z0-9]/g, '-')
         .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '') || 'event';
+        .replace(/^-|-$/g, '') || 'vstrecha';
     }
 
     async function commitToGitHub(path, content, message) {
@@ -189,14 +192,17 @@
 
       if (!putRes.ok) {
         const err = await putRes.json();
-        throw new Error(err.message || 'Ошибка сохранения');
+        throw new Error(err.message || 'Ошибка сохранения файла на GitHub');
       }
     }
 
     async function createPlayer() {
       const btn = document.getElementById('btn-player');
+      const errBox = document.getElementById('player-error');
       const name = document.getElementById('player-name').value.trim();
       const cmd = document.getElementById('player-cmd').value.trim();
+      
+      errBox.style.display = 'none';
       if (!name) return alert('Введите имя игрока!');
 
       btn.disabled = true;
@@ -212,7 +218,8 @@
         document.getElementById('player-cmd').value = '';
         setTimeout(() => document.getElementById('player-success').style.display = 'none', 4000);
       } catch (e) {
-        alert('Ошибка: ' + e.message);
+        errBox.innerText = 'Ошибка: ' + e.message;
+        errBox.style.display = 'block';
       } finally {
         btn.disabled = false;
         btn.innerText = 'Сохранить участника';
@@ -221,15 +228,17 @@
 
     async function createEvent() {
       const btn = document.getElementById('btn-event');
-      const title = document.getElementById('event-title').value.trim();
+      const errBox = document.getElementById('event-error');
+      const title = document.getElementById('event-title').value.trim() || "EDH Встреча";
       const date = document.getElementById('event-date').value;
-      const format = document.getElementById('event-format').value.trim();
-      const count = document.getElementById('event-count').value;
+      const format = document.getElementById('event-format').value.trim() || "Commander / Bracket 3";
+      const count = document.getElementById('event-count').value || 12;
       const winner = document.getElementById('winner-name').value.trim();
       const mox = document.getElementById('winner-mox').value.trim();
       const bodyText = document.getElementById('event-body').value.trim();
 
-      if (!date) return alert('Выберите дату!');
+      errBox.style.display = 'none';
+      if (!date) return alert('Выберите дату проведения!');
 
       btn.disabled = true;
       btn.innerText = 'Публикация... ⏳';
@@ -237,28 +246,26 @@
       const slug = slugify(title);
       const filename = `content/events/${date}-${slug}.md`;
 
-      let content = `---
-title: "${title}"
-date: "${date}"
-format: "${format}"
-players_count: ${count}
-results:
-`;
+      let content = `---\ntitle: "${title}"\ndate: "${date}"\nformat: "${format}"\nplayers_count: ${count}\n`;
+      
       if (winner) {
-        content += `  - place: "🥇 1 место"
-    player_name: "${winner}"
-    moxfield_url: "${mox}"\n`;
+        content += `results:\n  - place: "🥇 1 место"\n    player_name: "${winner}"\n`;
+        if (mox) {
+          content += `    moxfield_url: "${mox}"\n`;
+        }
       }
-      content += `---
-${bodyText}
-`;
+      content += `---\n${bodyText}\n`;
 
       try {
         await commitToGitHub(filename, content, `Add tournament report ${date}`);
         document.getElementById('event-success').style.display = 'block';
+        document.getElementById('winner-name').value = '';
+        document.getElementById('winner-mox').value = '';
+        document.getElementById('event-body').value = '';
         setTimeout(() => document.getElementById('event-success').style.display = 'none', 4000);
       } catch (e) {
-        alert('Ошибка: ' + e.message);
+        errBox.innerText = 'Ошибка публикации: ' + e.message;
+        errBox.style.display = 'block';
       } finally {
         btn.disabled = false;
         btn.innerText = 'Опубликовать отчёт';
