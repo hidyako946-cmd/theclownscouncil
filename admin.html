@@ -180,7 +180,7 @@
     <!-- Основная панель управления -->
     <div id="admin-section" style="display: none;">
 
-      <!-- РАЗДЕЛ 1: ГЛАВНОЕ МЕНЮ -->
+      <!-- ГЛАВНОЕ МЕНЮ -->
       <div id="view-menu" class="section-view active">
         <div class="card" style="text-align: center; padding: 10px 0 20px; border:none; background:transparent;">
           <h2 style="color: #fff; margin-bottom: 5px;">Главное меню</h2>
@@ -218,7 +218,7 @@
         </div>
       </div>
 
-      <!-- РАЗДЕЛ 2: СОЗДАНИЕ / РЕДАКТИРОВАНИЕ ОТЧЕТА -->
+      <!-- СОЗДАНИЕ / РЕДАКТИРОВАНИЕ ОТЧЕТА -->
       <div id="view-create-event" class="section-view">
         <button type="button" class="back-btn" onclick="openSection('view-menu')" style="margin-bottom: 15px;">← Назад в меню</button>
         
@@ -258,7 +258,7 @@
         </div>
       </div>
 
-      <!-- РАЗДЕЛ 3: СПИСОК / УПРАВЛЕНИЕ ОТЧЕТАМИ -->
+      <!-- УПРАВЛЕНИЕ ОТЧЕТАМИ -->
       <div id="view-manage-events" class="section-view">
         <button type="button" class="back-btn" onclick="openSection('view-menu')" style="margin-bottom: 15px;">← Назад в меню</button>
         
@@ -273,7 +273,7 @@
         </div>
       </div>
 
-      <!-- РАЗДЕЛ 4: УЧАСТНИКИ -->
+      <!-- УЧАСТНИКИ -->
       <div id="view-players" class="section-view">
         <button type="button" class="back-btn" onclick="openSection('view-menu')" style="margin-bottom: 15px;">← Назад в меню</button>
 
@@ -545,12 +545,12 @@
       }
     }
 
-    /* Управление отчётами */
+    /* Управление отчётами (папка invite) */
     async function loadEventsList() {
       const listContainer = document.getElementById('events-list-box');
       const token = getToken();
       try {
-        const res = await fetch(`https://api.github.com/repos/${REPO}/contents/content/events`, {
+        const res = await fetch(`https://api.github.com/repos/${REPO}/contents/invite`, {
           headers: token ? { 'Authorization': `token ${token}` } : {}
         });
         
@@ -625,7 +625,7 @@
     async function deleteEvent(fileName, title) {
       if (!confirm(`Удалить отчёт "${title}"?`)) return;
       try {
-        await deleteFromGitHub(`content/events/${fileName}`, `Delete tournament report ${title}`);
+        await deleteFromGitHub(`invite/${fileName}`, `Delete tournament report ${title}`);
         alert('Отчёт успешно удален!');
         await loadEventsList();
       } catch (e) {
@@ -767,15 +767,16 @@
       }
 
       const slug = slugify(title);
-      const filename = existingFileName ? `content/events/${existingFileName}` : `content/events/${date}-${slug}.md`;
+      // Сохранение в папку invite/
+      const filename = existingFileName ? `invite/${existingFileName}` : `invite/${date}-${slug}.md`;
 
       const content = `---\ntitle: "${title}"\ndate: "${date}"\nauthor: "${author}"\nformat: "${format}"\nplayers_count: ${count}\n${resultsBlock}---\n${bodyText}\n`;
 
       try {
         await commitToGitHub(filename, content, `Save tournament report ${date}`);
-        alert('🎉 Отчёт успешно сохранён на GitHub!');
+        alert('🎉 Отчёт успешно сохранён в папку invite/ на GitHub!');
         resetEventForm();
-        openSection('view-menu'); // Возврат на главное меню
+        openSection('view-menu'); // Возврат в главное меню
       } catch (e) {
         alert('Ошибка публикации: ' + e.message);
       }
