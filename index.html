@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Clown's Council — EDH Reports</title>
-  <!-- Подключаем обработчик Markdown для красивого отображения заметок -->
+  <!-- Подключаем обработчик Markdown -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <style>
@@ -119,7 +119,6 @@
     const GITHUB_USERNAME = 'hidyako946-cmd';
     const REPO_NAME = 'theclownscouncil';
 
-    // Вспомогательная функция разбора Markdown Frontmatter (шапки файла)
     function parseFrontmatter(text) {
       const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
       if (!match) return { data: {}, body: text };
@@ -134,7 +133,6 @@
       rawYaml.split('\n').forEach(line => {
         if (!line.trim()) return;
         
-        // Поля верхнего уровня (key: value)
         const keyVal = line.match(/^([a-zA-Z0-9_]+):\s*(.*)$/);
         if (keyVal && !line.startsWith('  ')) {
           const key = keyVal[1];
@@ -150,7 +148,6 @@
           return;
         }
 
-        // Элементы списка (  - place: ...)
         if (currentListKey && line.trim().startsWith('- ')) {
           currentListItem = {};
           data[currentListKey].push(currentListItem);
@@ -161,7 +158,6 @@
           return;
         }
 
-        // Вложенные поля списка
         if (currentListItem && line.startsWith('    ')) {
           const itemKeyVal = line.trim().match(/^([a-zA-Z0-9_]+):\s*(.*)$/);
           if (itemKeyVal) {
@@ -176,10 +172,9 @@
     async function loadReports() {
       const container = document.getElementById('reports-list');
       try {
-        // Получаем список файлов из папки content/events
         const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/content/events`);
         
-        if (response.status === 404) {
+        if (!response.ok) {
           container.innerHTML = `
             <div class="empty-state">
               <h2>Турниров пока не зафиксировано 🎲</h2>
@@ -189,7 +184,12 @@
         }
 
         const files = await response.json();
-        const mdFiles = files.filter(file => file.name.endsWith('.md'));
+        
+        if (!Array.isArray(files)) {
+          throw new Error('Not an array');
+        }
+
+        const mdFiles = files.filter(file => file.name && file.name.endsWith('.md'));
 
         if (mdFiles.length === 0) {
           container.innerHTML = `
@@ -200,11 +200,11 @@
           return;
         }
 
-        container.innerHTML = ''; // Очищаем статус загрузки
+        container.innerHTML = '';
 
-        // Скачиваем и рендерим каждый отчёт
         for (const file of mdFiles.reverse()) {
           const fileRes = await fetch(file.download_url);
+          if (!fileRes.ok) continue;
           const fileText = await fileRes.text();
           const { data, body } = parseFrontmatter(fileText);
 
@@ -238,8 +238,8 @@
         console.error(err);
         container.innerHTML = `
           <div class="empty-state">
-            <h2>Не удалось загрузить отчёты ⚠️</h2>
-            <p>Проверьте соединение с интернетом или настройки GitHub.</p>
+            <h2>Турниров пока не зафиксировано 🎲</h2>
+            <p>Отчёты появятся сразу после добавления первого мероприятия через панель организатора.</p>
           </div>`;
       }
     }
