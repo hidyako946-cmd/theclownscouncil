@@ -48,7 +48,6 @@
     }
     .back-btn:hover { color: #fff; border-color: var(--accent-color); }
 
-    /* Главное меню с кнопками */
     .menu-grid {
       display: grid;
       gap: 15px;
@@ -177,7 +176,7 @@
       <button type="button" class="action-btn" onclick="saveToken()">Войти</button>
     </div>
 
-    <!-- Основная панель управления -->
+    <!-- Основная панель -->
     <div id="admin-section" style="display: none;">
 
       <!-- ГЛАВНОЕ МЕНЮ -->
@@ -767,7 +766,6 @@
       }
 
       const slug = slugify(title);
-      // Сохранение в папку invite/
       const filename = existingFileName ? `invite/${existingFileName}` : `invite/${date}-${slug}.md`;
 
       const content = `---\ntitle: "${title}"\ndate: "${date}"\nauthor: "${author}"\nformat: "${format}"\nplayers_count: ${count}\n${resultsBlock}---\n${bodyText}\n`;
@@ -776,9 +774,9 @@
         await commitToGitHub(filename, content, `Save tournament report ${date}`);
         alert('🎉 Отчёт успешно сохранён в папку invite/ на GitHub!');
         resetEventForm();
-        openSection('view-menu'); // Возврат в главное меню
+        openSection('view-menu');
       } catch (e) {
-        alert('Ошибка публикации: ' + e.message);
+        alert('❌ Ошибка сохранения отчёта: ' + e.message);
       }
     }
 
