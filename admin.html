@@ -248,12 +248,12 @@
           <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0 10px;">
           <h4 style="margin: 0; color: #fff;">📊 Результаты участников</h4>
           <div id="results-container"></div>
-          <button type="button" class="btn-secondary" onclick="addResultRow()">+ Добавить участника в таблицу</button>
+          <button type="button" class="btn-secondary" id="add-row-btn">+ Добавить участника в таблицу</button>
 
           <label style="margin-top: 20px;">Заметки / Описание турнира</label>
           <textarea id="event-body" rows="3" placeholder="Заметки по метагейму, ключевым партиям..."></textarea>
 
-          <button type="button" class="action-btn" onclick="createEvent()">Сохранить отчёт и в меню</button>
+          <button type="button" class="action-btn" id="save-event-btn">Сохранить отчёт и в меню</button>
         </div>
       </div>
 
@@ -264,7 +264,7 @@
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3 style="margin: 0;">📋 Управление отчётами</h3>
-            <button type="button" class="btn-secondary" style="width:auto; margin:0; padding: 4px 10px; font-size:0.8rem;" onclick="loadEventsList()">🔄 Обновить</button>
+            <button type="button" class="btn-secondary" style="width:auto; margin:0; padding: 4px 10px; font-size:0.8rem;" id="refresh-events-btn">🔄 Обновить</button>
           </div>
           <div id="events-list-box">
             <div style="text-align:center; color: var(--text-muted); padding: 15px;">Загрузка списка отчётов...</div>
@@ -283,14 +283,14 @@
           <input type="text" id="player-name" placeholder="Например: Андрей">
           <label>Любимый генерал / Заметки</label>
           <input type="text" id="player-cmd" placeholder="Например: Lumra">
-          <button type="button" class="action-btn" onclick="savePlayer()">Сохранить участника</button>
-          <button id="btn-player-cancel" type="button" class="btn-secondary" style="display:none;" onclick="resetPlayerForm()">Отмена редактирования</button>
+          <button type="button" class="action-btn" id="save-player-btn">Сохранить участника</button>
+          <button id="btn-player-cancel" type="button" class="btn-secondary" style="display:none;">Отмена редактирования</button>
         </div>
 
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3 style="margin: 0;">👥 База участников</h3>
-            <button type="button" class="btn-secondary" style="width:auto; margin:0; padding: 4px 10px; font-size:0.8rem;" onclick="loadPlayersList()">🔄 Обновить</button>
+            <button type="button" class="btn-secondary" style="width:auto; margin:0; padding: 4px 10px; font-size:0.8rem;" id="refresh-players-btn">🔄 Обновить</button>
           </div>
           <div id="players-list-box">
             <div style="text-align:center; color: var(--text-muted); padding: 15px;">Загрузка списка участников...</div>
@@ -483,12 +483,20 @@
               ${commander ? `<span>Генерал: ${commander}</span>` : ''}
             </div>
             <div class="action-btns">
-              <button type="button" class="btn-secondary" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;" onclick="editPlayer('${playerData.slug}', '${name.replace(/'/g, "\\'")}', '${commander.replace(/'/g, "\\'")}')">✏️ Изм.</button>
-              <button type="button" class="btn-secondary btn-delete" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;" onclick="deletePlayer('${playerData.slug}', '${name.replace(/'/g, "\\'")}')">🗑️ Уд.</button>
+              <button type="button" class="btn-secondary edit-player-btn" data-slug="${playerData.slug}" data-name="${name.replace(/"/g, '&quot;')}" data-cmd="${commander.replace(/"/g, '&quot;')}" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;">✏️ Изм.</button>
+              <button type="button" class="btn-secondary btn-delete delete-player-btn" data-slug="${playerData.slug}" data-name="${name.replace(/"/g, '&quot;')}" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;">🗑️ Уд.</button>
             </div>
           `;
           listContainer.appendChild(item);
         }
+
+        // Привязываем события кнопкам участников
+        document.querySelectorAll('.edit-player-btn').forEach(btn => {
+          btn.addEventListener('click', () => editPlayer(btn.dataset.slug, btn.dataset.name, btn.dataset.cmd));
+        });
+        document.querySelectorAll('.delete-player-btn').forEach(btn => {
+          btn.addEventListener('click', () => deletePlayer(btn.dataset.slug, btn.dataset.name));
+        });
 
       } catch (e) {
         listContainer.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 10px;">Не удалось подгрузить участников</div>';
@@ -605,12 +613,20 @@
               <span>📅 ${date || 'Без даты'} | 👤 Автор: ${author}</span>
             </div>
             <div class="action-btns">
-              <button type="button" class="btn-secondary" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;" onclick="editEvent('${file.name}')">✏️ Ред.</button>
-              <button type="button" class="btn-secondary btn-delete" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;" onclick="deleteEvent('${file.name}', '${title.replace(/'/g, "\\'")}')">🗑️ Уд.</button>
+              <button type="button" class="btn-secondary edit-event-btn" data-filename="${file.name}" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;">✏️ Ред.</button>
+              <button type="button" class="btn-secondary btn-delete delete-event-btn" data-filename="${file.name}" data-title="${title.replace(/"/g, '&quot;')}" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;">🗑️ Уд.</button>
             </div>
           `;
           listContainer.appendChild(item);
         }
+
+        // Привязываем события кнопкам отчётов
+        document.querySelectorAll('.edit-event-btn').forEach(btn => {
+          btn.addEventListener('click', () => editEvent(btn.dataset.filename));
+        });
+        document.querySelectorAll('.delete-event-btn').forEach(btn => {
+          btn.addEventListener('click', () => deleteEvent(btn.dataset.filename, btn.dataset.title));
+        });
 
         if (globalEventsCache.length === 0) {
           listContainer.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 10px;">Отчётов пока не создано</div>';
@@ -780,7 +796,17 @@
       }
     }
 
-    checkAuth();
+    // Привязка всех кнопок через JS для 100% срабатывания
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAuth();
+      
+      document.getElementById('save-event-btn').addEventListener('click', createEvent);
+      document.getElementById('add-row-btn').addEventListener('click', () => addResultRow('Участник'));
+      document.getElementById('save-player-btn').addEventListener('click', savePlayer);
+      document.getElementById('btn-player-cancel').addEventListener('click', resetPlayerForm);
+      document.getElementById('refresh-events-btn').addEventListener('click', loadEventsList);
+      document.getElementById('refresh-players-btn').addEventListener('click', loadPlayersList);
+    });
   </script>
 </body>
 </html>
