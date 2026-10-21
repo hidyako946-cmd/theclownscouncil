@@ -6,8 +6,22 @@ media_folder: "assets/uploads"
 public_folder: "/assets/uploads"
 
 collections:
+  # 1. Коллекция для быстрого управления списком участников
+  - name: "players"
+    label: "👥 Участники лиги"
+    label_singular: "Участник"
+    folder: "content/players"
+    create: true
+    slug: "{{slug}}"
+    summary: "{{fields.name}}"
+    fields:
+      - { label: "Имя игрока / Никнейм", name: "name", widget: "string" }
+      - { label: "Любимый генерал / Заметки", name: "favorite_commander", widget: "string", required: false, hint: "Например: Lumra, 20000th Leaf" }
+
+  # 2. Коллекция отчётов с динамической связкой игроков
   - name: "events"
-    label: "Мероприятия и Отчёты"
+    label: "🏆 Мероприятия и Отчёты"
+    label_singular: "Отчёт"
     folder: "content/events"
     create: true
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
@@ -34,13 +48,10 @@ collections:
               - "Участник"
           - label: "Имя игрока"
             name: "player_name"
-            widget: "select"
-            hint: "Выберите из списка или введите имя нового игрока"
-            options:
-              - "Андрей"
-              - "Екатерина"
-              - "Влад"
-              - "Артем"
-              - "Камиль"
-              - "Настя"
+            widget: "relation"
+            collection: "players"
+            search_fields: ["name"]
+            value_field: "name"
+            display_fields: ["name"]
+            hint: "Выберите игрока из базы"
           - { label: "Ссылка на Moxfield", name: "moxfield_url", widget: "string", required: false, hint: "https://www.moxfield.com/decks/..." }
