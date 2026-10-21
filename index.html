@@ -66,7 +66,8 @@
     <header>
       <h1>🎪 The Clown's Council</h1>
       <p class="subtitle">Отчёты о турнирах EDH Commander, метагейм и сводки колод</p>
-      <a href="/admin/" class="admin-link">⚙️ Панель организатора</a>
+      <!-- Ссылка ведет на постоянный адрес админки Netlify -->
+      <a href="https://theclownscouncil.netlify.app/admin/" class="admin-link">⚙️ Панель организатора</a>
     </header>
     <main id="reports-list">
       <div class="empty-state">
@@ -83,7 +84,7 @@
       window.netlifyIdentity.on("init", user => {
         if (!user) {
           window.netlifyIdentity.on("login", () => {
-            document.location.href = "/admin/";
+            document.location.href = "https://theclownscouncil.netlify.app/admin/";
           });
         }
       });
