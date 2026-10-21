@@ -94,6 +94,8 @@
       margin-bottom: 20px;
     }
     label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; margin-top: 12px; }
+    .req { color: var(--red); font-weight: bold; }
+
     input, select, textarea {
       width: 100%;
       background: #121214;
@@ -104,6 +106,10 @@
       font-size: 0.95rem;
       box-sizing: border-box;
     }
+    input.invalid, select.invalid {
+      border-color: var(--red) !important;
+    }
+
     button {
       background: var(--accent-color);
       color: #fff;
@@ -119,6 +125,7 @@
     }
     button:hover { background: var(--accent-hover); }
     button:disabled { background: var(--border-color); cursor: not-allowed; }
+    
     .btn-secondary {
       background: transparent;
       border: 1px dashed var(--border-color);
@@ -169,19 +176,13 @@
       margin: 0;
     }
 
-    .action-btns {
-      display: flex;
-      gap: 6px;
-    }
+    .action-btns { display: flex; gap: 6px; }
     .btn-delete {
       background: rgba(255, 77, 77, 0.15);
       border: 1px solid var(--red);
       color: var(--red);
     }
-    .btn-delete:hover {
-      background: var(--red);
-      color: #fff;
-    }
+    .btn-delete:hover { background: var(--red); color: #fff; }
 
     .success { color: var(--green); text-align: center; font-weight: bold; margin-top: 10px; display: none; }
     .error-msg { color: var(--red); text-align: center; font-size: 0.85rem; margin-top: 10px; display: none; }
@@ -201,15 +202,15 @@
       <h3>🔐 Авторизация</h3>
       <p style="color: var(--text-muted); font-size: 0.85rem;">Введите ваш Personal Access Token от GitHub:</p>
       <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx">
-      <button onclick="saveToken()">Войти</button>
+      <button type="button" onclick="saveToken()">Войти</button>
     </div>
 
     <!-- Основная админка -->
     <div id="admin-section" style="display: none;">
       
       <div class="admin-tabs">
-        <button class="tab-btn active" onclick="switchAdminTab('tab-events')">🏆 Прошедшие турниры</button>
-        <button class="tab-btn" onclick="switchAdminTab('tab-players')">👥 Участники</button>
+        <button type="button" class="tab-btn active" onclick="switchAdminTab('tab-events', event)">🏆 Прошедшие турниры</button>
+        <button type="button" class="tab-btn" onclick="switchAdminTab('tab-players', event)">👥 Участники</button>
       </div>
 
       <!-- Вкладка: ТУРНИРЫ -->
@@ -218,15 +219,15 @@
           <h3 id="event-form-title">🏆 Опубликовать отчёт о турнире</h3>
           <input type="hidden" id="event-file-path" value="">
 
-          <label>Автор отчёта (Организатор)</label>
+          <label>Автор отчёта (Организатор) <span class="req">*</span></label>
           <input type="text" id="event-author" value="Андрей" placeholder="Имя организатора">
 
-          <label>Название турнира</label>
+          <label>Название турнира <span class="req">*</span></label>
           <input type="text" id="event-title" value="EDH Встреча">
           
           <div style="display: flex; gap: 10px;">
             <div style="flex: 1;">
-              <label>Дата проведения</label>
+              <label>Дата проведения <span class="req">*</span></label>
               <input type="date" id="event-date">
             </div>
             <div style="flex: 1;">
@@ -268,7 +269,7 @@
         <div class="card">
           <h3 id="player-form-title">➕ Добавить нового участника</h3>
           <input type="hidden" id="player-file-slug" value="">
-          <label>Имя / Никнейм</label>
+          <label>Имя / Никнейм <span class="req">*</span></label>
           <input type="text" id="player-name" placeholder="Например: Андрей">
           <label>Любимый генерал / Заметки</label>
           <input type="text" id="player-cmd" placeholder="Например: Lumra">
@@ -315,12 +316,12 @@
       checkAuth();
     }
 
-    function switchAdminTab(tabId) {
+    function switchAdminTab(tabId, evt) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
       
       document.getElementById(tabId).classList.add('active');
-      event.target.classList.add('active');
+      if (evt && evt.target) evt.target.classList.add('active');
     }
 
     function checkAuth() {
@@ -409,7 +410,6 @@
       }
     }
 
-    /* Загрузка всех участников из GitHub */
     async function loadPlayersList() {
       const listContainer = document.getElementById('players-list-box');
       const token = getToken();
@@ -504,17 +504,26 @@
       document.getElementById('player-name').value = '';
       document.getElementById('player-cmd').value = '';
       document.getElementById('btn-player-cancel').style.display = 'none';
+      document.getElementById('player-name').classList.remove('invalid');
     }
 
     async function savePlayer() {
       const btn = document.getElementById('btn-player');
       const errBox = document.getElementById('player-error');
-      const name = document.getElementById('player-name').value.trim();
+      const nameInput = document.getElementById('player-name');
+      const name = nameInput.value.trim();
       const cmd = document.getElementById('player-cmd').value.trim();
       const existingSlug = document.getElementById('player-file-slug').value;
 
       errBox.style.display = 'none';
-      if (!name) return alert('Введите имя игрока!');
+      nameInput.classList.remove('invalid');
+
+      if (!name) {
+        nameInput.classList.add('invalid');
+        errBox.innerText = 'Пожалуйста, введите имя участника!';
+        errBox.style.display = 'block';
+        return;
+      }
 
       btn.disabled = true;
       btn.innerText = 'Сохранение... ⏳';
@@ -537,7 +546,6 @@
       }
     }
 
-    /* Загрузка всех турниров из GitHub */
     async function loadEventsList() {
       const listContainer = document.getElementById('events-list-box');
       const token = getToken();
@@ -648,6 +656,10 @@
       document.getElementById('event-body').value = '';
       document.getElementById('btn-event-cancel').style.display = 'none';
 
+      document.getElementById('event-title').classList.remove('invalid');
+      document.getElementById('event-date').classList.remove('invalid');
+      document.getElementById('event-author').classList.remove('invalid');
+
       document.getElementById('results-container').innerHTML = '';
       addResultRow('🥇 1 место');
       addResultRow('🥈 2 место');
@@ -710,23 +722,40 @@
     async function createEvent() {
       const btn = document.getElementById('btn-event');
       const errBox = document.getElementById('event-error');
+      
       const existingPath = document.getElementById('event-file-path').value;
-      const author = document.getElementById('event-author').value.trim() || "Андрей";
-      const title = document.getElementById('event-title').value.trim() || "EDH Встреча";
-      const date = document.getElementById('event-date').value;
+      const authorInput = document.getElementById('event-author');
+      const titleInput = document.getElementById('event-title');
+      const dateInput = document.getElementById('event-date');
+      
+      const author = authorInput.value.trim();
+      const title = titleInput.value.trim();
+      const date = dateInput.value;
       const format = document.getElementById('event-format').value.trim() || "Commander / Bracket 3";
       const count = document.getElementById('event-count').value || 12;
       const bodyText = document.getElementById('event-body').value.trim();
 
       errBox.style.display = 'none';
-      if (!date) return alert('Пожалуйста, выберите дату проведения турнира!');
+      authorInput.classList.remove('invalid');
+      titleInput.classList.remove('invalid');
+      dateInput.classList.remove('invalid');
+
+      let hasError = false;
+      if (!title) { titleInput.classList.add('invalid'); hasError = true; }
+      if (!date) { dateInput.classList.add('invalid'); hasError = true; }
+      if (!author) { authorInput.classList.add('invalid'); hasError = true; }
+
+      if (hasError) {
+        errBox.innerText = 'Заполните все обязательные поля (выделены красным)!';
+        errBox.style.display = 'block';
+        return;
+      }
 
       btn.disabled = true;
       btn.innerText = 'Публикация... ⏳';
 
       const rows = document.querySelectorAll('#results-container .player-row');
-      let resultsYaml = '';
-      let hasValidResults = false;
+      let resultsYamlArr = [];
       
       rows.forEach(row => {
         const place = row.querySelector('.res-place').value;
@@ -735,20 +764,27 @@
         const mox = row.querySelector('.res-mox').value.trim();
 
         if (pName) {
-          if (!hasValidResults) {
-            resultsYaml = 'results:\n';
-            hasValidResults = true;
-          }
-          resultsYaml += `  - place: "${place}"\n    player_name: "${pName}"\n`;
-          if (commander) resultsYaml += `    commander: "${commander}"\n`;
-          if (mox) resultsYaml += `    moxfield_url: "${mox}"\n`;
+          let rowObj = { place, player_name: pName };
+          if (commander) rowObj.commander = commander;
+          if (mox) rowObj.moxfield_url = mox;
+          resultsYamlArr.push(rowObj);
         }
       });
+
+      let resultsBlock = '';
+      if (resultsYamlArr.length > 0) {
+        resultsBlock = 'results:\n';
+        resultsYamlArr.forEach(r => {
+          resultsBlock += `  - place: "${r.place}"\n    player_name: "${r.player_name}"\n`;
+          if (r.commander) resultsBlock += `    commander: "${r.commander}"\n`;
+          if (r.moxfield_url) resultsBlock += `    moxfield_url: "${r.moxfield_url}"\n`;
+        });
+      }
 
       const slug = slugify(title);
       const filename = existingPath || `content/events/${date}-${slug}.md`;
 
-      const content = `---\ntitle: "${title}"\ndate: "${date}"\nauthor: "${author}"\nformat: "${format}"\nplayers_count: ${count}\n${resultsYaml}---\n${bodyText}\n`;
+      const content = `---\ntitle: "${title}"\ndate: "${date}"\nauthor: "${author}"\nformat: "${format}"\nplayers_count: ${count}\n${resultsBlock}---\n${bodyText}\n`;
 
       try {
         await commitToGitHub(filename, content, `Save tournament report ${date}`);
