@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Clown's Council — Панель управления</title>
+  <style>
+    :root {
+      --bg-color: #121214;
+      --card-bg: #1e1e24;
+      --accent-color: #ff4500;
+      --text-main: #e1e1e6;
+      --text-muted: #a8a8b3;
+      --border-color: #323238;
+      --green: #00b37e;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      margin: 0;
+      padding: 20px;
+    }
+    .container { max-width: 600px; margin: 0 auto; }
+    h1 { font-size: 1.5rem; color: #fff; text-align: center; }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; margin-top: 12px; }
+    input, select, textarea {
+      width: 100%;
+      background: #121214;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
+      color: #fff;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+    }
+    button {
+      background: var(--accent-color);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 20px;
+    }
+    button:hover { background: #ff6347; }
+    .success { color: var(--green); text-align: center; font-weight: bold; margin-top: 10px; display: none; }
+    .auth-box { text-align: center; padding: 40px 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎪 Панель организатора</h1>
+
+    <!-- Блок авторизации по токену -->
+    <div id="auth-section" class="card auth-box">
+      <h3>🔐 Авторизация</h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem;">Введите ваш GitHub Personal Access Token:</p>
+      <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx">
+      <button onclick="saveToken()">Войти</button>
+    </div>
+
+    <!-- Основная админка -->
+    <div id="admin-section" style="display: none;">
+      
+      <!-- Форма добавления участника -->
+      <div class="card">
+        <h3>👥 Добавить участника</h3>
+        <label>Имя игрока</label>
+        <input type="text" id="player-name" placeholder="Например: Андрей">
+        <label>Любимый генерал / Комментарий</label>
+        <input type="text" id="player-cmd" placeholder="Например: Lumra">
+        <button onclick="createPlayer()">Сохранить участника</button>
+        <div id="player-success" class="success">Участник успешно добавлен! 🎉</div>
+      </div>
+
+      <!-- Форма добавления турнира -->
+      <div class="card">
+        <h3>🏆 Добавить турнир / отчёт</h3>
+        <label>Название турнира</label>
+        <input type="text" id="event-title" value="EDH Встреча">
+        <label>Дата</label>
+        <input type="date" id="event-date">
+        <label>Формат / Брекет</label>
+        <input type="text" id="event-format" value="Commander / Bracket 3">
+        <label>Количество участников</label>
+        <input type="number" id="event-count" value="12">
+        
+        <label>Победитель (1 место)</label>
+        <input type="text" id="winner-name" placeholder="Имя победителя">
+        <label>Ссылка на колоду победителя (Moxfield)</label>
+        <input type="text" id="winner-mox" placeholder="https://www.moxfield.com/decks/...">
+
+        <label>Заметки / Описание турнира</label>
+        <textarea id="event-body" rows="3" placeholder="Итоги встреч, интересные моменты..."></textarea>
+
+        <button onclick="createEvent()">Опубликовать отчёт</button>
+        <div id="event-success" class="success">Отчёт успешно опубликован на сайте! 🚀</div>
+      </div>
+
+      <div style="text-align: center;">
+        <button onclick="logout()" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); width: auto; padding: 6px 14px; font-size: 0.8rem;">Выйти</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const REPO = 'hidyako946-cmd/theclownscouncil';
+
+    function getToken() { return localStorage.getItem('github_token'); }
+
+    function saveToken() {
+      const token = document.getElementById('token-input').value.trim();
+      if (!token) return alert('Введите токен!');
+      localStorage.setItem('github_token', token);
+      checkAuth();
+    }
+
+    function logout() {
+      localStorage.removeItem('github_token');
+      checkAuth();
+    }
+
+    function checkAuth() {
+      if (getToken()) {
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('admin-section').style.display = 'block';
+        document.getElementById('event-date').valueAsDate = new Date();
+      } else {
+        document.getElementById('auth-section').style.display = 'block';
+        document.getElementById('admin-section').style.display = 'none';
+      }
+    }
+
+    async function commitToGitHub(path, content, message) {
+      const token = getToken();
+      const url = `https://api.github.com/repos/${REPO}/contents/${path}`;
+      
+      let sha = null;
+      const getRes = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
+      if (getRes.ok) {
+        const fileData = await getRes.json();
+        sha = fileData.sha;
+      }
+
+      const bodyData = {
+        message: message,
+        content: btoa(unescape(encodeURIComponent(content)))
+      };
+      if (sha) bodyData.sha = sha;
+
+      const putRes = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(bodyData)
+      });
+
+      if (!putRes.ok) {
+        const err = await putRes.json();
+        throw new Error(err.message || 'Ошибка сохранения');
+      }
+    }
+
+    async function createPlayer() {
+      const name = document.getElementById('player-name').value.trim();
+      const cmd = document.getElementById('player-cmd').value.trim();
+      if (!name) return alert('Введите имя игрока!');
+
+      const slug = name.toLowerCase().replace(/[^a-zа-я0-9]/g, '_');
+      const content = `---\nname: "${name}"\nfavorite_commander: "${cmd}"\n---\n`;
+
+      try {
+        await commitToGitHub(`content/players/${slug}.md`, content, `Add player ${name}`);
+        document.getElementById('player-success').style.display = 'block';
+        document.getElementById('player-name').value = '';
+        document.getElementById('player-cmd').value = '';
+        setTimeout(() => document.getElementById('player-success').style.display = 'none', 4000);
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
+    }
+
+    async function createEvent() {
+      const title = document.getElementById('event-title').value;
+      const date = document.getElementById('event-date').value;
+      const format = document.getElementById('event-format').value;
+      const count = document.getElementById('event-count').value;
+      const winner = document.getElementById('winner-name').value;
+      const mox = document.getElementById('winner-mox').value;
+      const bodyText = document.getElementById('event-body').value;
+
+      if (!date) return alert('Выберите дату!');
+
+      const slug = title.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const filename = `content/events/${date}-${slug}.md`;
+
+      let content = `---
+title: "${title}"
+date: "${date}"
+format: "${format}"
+players_count: ${count}
+results:
+`;
+      if (winner) {
+        content += `  - place: "🥇 1 место"
+    player_name: "${winner}"
+    moxfield_url: "${mox}"\n`;
+      }
+      content += `---
+${bodyText}
+`;
+
+      try {
+        await commitToGitHub(filename, content, `Add tournament report ${date}`);
+        document.getElementById('event-success').style.display = 'block';
+        setTimeout(() => document.getElementById('event-success').style.display = 'none', 4000);
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
+    }
+
+    checkAuth();
+  </script>
+</body>
+</html>
