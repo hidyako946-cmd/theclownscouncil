@@ -410,6 +410,7 @@
       }
     }
 
+    /* Управление участниками */
     async function loadPlayersList() {
       const listContainer = document.getElementById('players-list-box');
       const token = getToken();
@@ -546,6 +547,7 @@
       }
     }
 
+    /* Управление турнирами/отчётами */
     async function loadEventsList() {
       const listContainer = document.getElementById('events-list-box');
       const token = getToken();
@@ -606,13 +608,30 @@
               <strong>${title}</strong>
               <span>📅 ${date || 'Без даты'} | 👤 Автор: ${author}</span>
             </div>
-            <button type="button" class="btn-secondary" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;" onclick="editEvent('${file.name}')">✏️ Редактировать</button>
+            <div class="action-btns">
+              <button type="button" class="btn-secondary" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;" onclick="editEvent('${file.name}')">✏️ Ред.</button>
+              <button type="button" class="btn-secondary btn-delete" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;" onclick="deleteEvent('content/events/${file.name}', '${title.replace(/'/g, "\\'")}')">🗑️ Уд.</button>
+            </div>
           `;
           listContainer.appendChild(item);
         }
 
       } catch (e) {
         listContainer.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 10px;">Не удалось загрузить отчёты</div>';
+      }
+    }
+
+    async function deleteEvent(path, title) {
+      if (!confirm(`Вы уверены, что хотите удалить отчёт "${title}"?`)) return;
+
+      try {
+        await deleteFromGitHub(path, `Delete tournament report ${title}`);
+        if (document.getElementById('event-file-path').value === path) {
+          resetEventForm();
+        }
+        await loadEventsList();
+      } catch (e) {
+        alert('Ошибка при удалении отчёта: ' + e.message);
       }
     }
 
