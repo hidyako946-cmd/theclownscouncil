@@ -58,7 +58,6 @@
       background: rgba(255, 69, 0, 0.1);
     }
 
-    /* Навигация вкладок */
     .admin-tabs {
       display: flex;
       gap: 10px;
@@ -130,7 +129,7 @@
     }
     .btn-secondary:hover { border-color: var(--accent-color); color: var(--accent-color); }
     
-    .player-item {
+    .item-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -140,8 +139,8 @@
       margin-bottom: 8px;
       border-radius: 6px;
     }
-    .player-item-info strong { color: #fff; }
-    .player-item-info span { color: var(--text-muted); font-size: 0.85rem; display: block; }
+    .item-info strong { color: #fff; }
+    .item-info span { color: var(--text-muted); font-size: 0.85rem; display: block; }
 
     .player-row {
       background: rgba(0, 0, 0, 0.2);
@@ -202,7 +201,12 @@
       <!-- Вкладка: ТУРНИРЫ -->
       <div id="tab-events" class="tab-content active">
         <div class="card">
-          <h3>🏆 Опубликовать отчёт о турнире</h3>
+          <h3 id="event-form-title">🏆 Опубликовать отчёт о турнире</h3>
+          <input type="hidden" id="event-file-path" value="">
+
+          <label>Автор отчёта (Организатор)</label>
+          <input type="text" id="event-author" value="Андрей" placeholder="Имя организатора">
+
           <label>Название турнира</label>
           <input type="text" id="event-title" value="EDH Встреча">
           
@@ -229,8 +233,19 @@
           <textarea id="event-body" rows="3" placeholder="Заметки по метагейму, ключевым партиям..."></textarea>
 
           <button id="btn-event" type="button" onclick="createEvent()">Опубликовать отчёт на сайте</button>
-          <div id="event-success" class="success">Отчёт успешно опубликован! 🚀</div>
+          <button id="btn-event-cancel" type="button" class="btn-secondary" style="display:none;" onclick="resetEventForm()">Отмена редактирования</button>
+          <div id="event-success" class="success">Отчёт успешно сохранён! 🚀</div>
           <div id="event-error" class="error-msg"></div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="margin: 0;">📋 Все опубликованные отчёты</h3>
+            <button type="button" class="btn-secondary" style="margin:0; padding: 4px 10px; font-size:0.8rem;" onclick="loadEventsList()">🔄 Обновить</button>
+          </div>
+          <div id="events-list-box">
+            <div style="text-align:center; color: var(--text-muted); padding: 15px;">Загрузка списка отчётов...</div>
+          </div>
         </div>
       </div>
 
@@ -270,6 +285,7 @@
   <script>
     const REPO = 'hidyako946-cmd/theclownscouncil';
     let globalPlayersCache = [];
+    let globalEventsCache = [];
 
     function getToken() { return localStorage.getItem('github_token'); }
 
@@ -301,6 +317,7 @@
           document.getElementById('event-date').valueAsDate = new Date();
         }
         loadPlayersList();
+        loadEventsList();
       } else {
         document.getElementById('auth-section').style.display = 'block';
         document.getElementById('admin-section').style.display = 'none';
@@ -317,7 +334,7 @@
       return text.toLowerCase().split('').map(char => ru[char] || char).join('')
         .replace(/[^a-z0-9]/g, '-')
         .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '') || 'player';
+        .replace(/^-|-$/g, '') || 'vstrecha';
     }
 
     async function commitToGitHub(path, content, message) {
@@ -352,6 +369,123 @@
         const err = await putRes.json();
         throw new Error(err.message || 'Ошибка сохранения на GitHub');
       }
+    }
+
+    /* Загрузка всех турниров из GitHub */
+    async function loadEventsList() {
+      const listContainer = document.getElementById('events-list-box');
+      const token = getToken();
+      try {
+        const res = await fetch(`https://api.github.com/repos/${REPO}/contents/content/events`, {
+          headers: token ? { 'Authorization': `token ${token}` } : {}
+        });
+        
+        if (!res.ok) {
+          listContainer.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 10px;">Отчётов пока не создано</div>';
+          globalEventsCache = [];
+          return;
+        }
+
+        const files = await res.json();
+        const mdFiles = files.filter(f => f.name && f.name.endsWith('.md'));
+        
+        globalEventsCache = [];
+        listContainer.innerHTML = '';
+
+        for (const file of mdFiles.reverse()) {
+          const fRes = await fetch(file.download_url);
+          if (!fRes.ok) continue;
+          const text = await fRes.text();
+          
+          let title = file.name.replace('.md', '');
+          let date = '';
+          let author = 'Организатор';
+          let parsedData = {};
+          let bodyText = '';
+
+          const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+          if (match) {
+            try {
+              parsedData = jsyaml.load(match[1]) || {};
+              bodyText = match[2] || '';
+              if (parsedData.title) title = parsedData.title;
+              if (parsedData.date) date = parsedData.date.split('T')[0];
+              if (parsedData.author) author = parsedData.author;
+            } catch (e) {}
+          }
+
+          const eventRecord = {
+            path: `content/events/${file.name}`,
+            file_name: file.name,
+            title,
+            date,
+            author,
+            parsedData,
+            bodyText
+          };
+          globalEventsCache.push(eventRecord);
+
+          const item = document.createElement('div');
+          item.className = 'item-row';
+          item.innerHTML = `
+            <div class="item-info">
+              <strong>${title}</strong>
+              <span>📅 ${date || 'Без даты'} | 👤 Автор: ${author}</span>
+            </div>
+            <button type="button" class="btn-secondary" style="width:auto; margin:0; padding: 4px 10px; font-size: 0.8rem;" onclick="editEvent('${file.name}')">✏️ Редактировать</button>
+          `;
+          listContainer.appendChild(item);
+        }
+
+      } catch (e) {
+        listContainer.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 10px;">Не удалось загрузить отчёты</div>';
+      }
+    }
+
+    function editEvent(fileName) {
+      const found = globalEventsCache.find(e => e.file_name === fileName);
+      if (!found) return;
+
+      document.getElementById('event-form-title').innerText = '✏️ Редактировать отчёт';
+      document.getElementById('event-file-path').value = found.path;
+      document.getElementById('event-title').value = found.title;
+      document.getElementById('event-author').value = found.author || 'Андрей';
+      if (found.date) document.getElementById('event-date').value = found.date;
+      document.getElementById('event-format').value = found.parsedData.format || 'Commander / Bracket 3';
+      document.getElementById('event-count').value = found.parsedData.players_count || 12;
+      document.getElementById('event-body').value = found.bodyText.trim();
+
+      // Заполняем таблицу результатов
+      const resultsContainer = document.getElementById('results-container');
+      resultsContainer.innerHTML = '';
+
+      if (found.parsedData.results && Array.isArray(found.parsedData.results)) {
+        found.parsedData.results.forEach(res => {
+          addResultRow(res.place || 'Участник', res.player_name || '', res.commander || '', res.moxfield_url || '');
+        });
+      } else {
+        addResultRow('🥇 1 место');
+        addResultRow('🥈 2 место');
+      }
+
+      document.getElementById('btn-event-cancel').style.display = 'inline-block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetEventForm() {
+      document.getElementById('event-form-title').innerText = '🏆 Опубликовать отчёт о турнире';
+      document.getElementById('event-file-path').value = '';
+      document.getElementById('event-title').value = 'EDH Встреча';
+      document.getElementById('event-author').value = 'Андрей';
+      document.getElementById('event-date').valueAsDate = new Date();
+      document.getElementById('event-format').value = 'Commander / Bracket 3';
+      document.getElementById('event-count').value = 12;
+      document.getElementById('event-body').value = '';
+      document.getElementById('btn-event-cancel').style.display = 'none';
+
+      document.getElementById('results-container').innerHTML = '';
+      addResultRow('🥇 1 место');
+      addResultRow('🥈 2 место');
     }
 
     /* Загрузка всех участников из GitHub */
@@ -396,9 +530,9 @@
           globalPlayersCache.push(playerData);
 
           const item = document.createElement('div');
-          item.className = 'player-item';
+          item.className = 'item-row';
           item.innerHTML = `
-            <div class="player-item-info">
+            <div class="item-info">
               <strong>${name}</strong>
               ${commander ? `<span>Генерал: ${commander}</span>` : ''}
             </div>
@@ -465,8 +599,8 @@
       }
     }
 
-    /* Добавление строки в таблицу отчёта с автозаполнением из базы */
-    function addResultRow(defaultPlace = 'Участник') {
+    /* Добавление строки результатов с предустановленными значениями */
+    function addResultRow(defaultPlace = 'Участник', defaultName = '', defaultCmd = '', defaultMox = '') {
       const container = document.getElementById('results-container');
       const rowId = 'row-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
       
@@ -490,18 +624,18 @@
           </div>
           <div>
             <label style="margin-top:0;">Имя игрока (из базы)</label>
-            <input type="text" class="res-name" list="players-datalist" placeholder="Имя / Никнейм" oninput="onPlayerSelect(this)">
+            <input type="text" class="res-name" list="players-datalist" value="${defaultName}" placeholder="Имя / Никнейм" oninput="onPlayerSelect(this)">
             <datalist id="players-datalist">${datalistOptions}</datalist>
           </div>
         </div>
         <div class="player-row-grid" style="margin-top: 6px;">
           <div>
             <label style="margin-top:0;">Командир / Колода</label>
-            <input type="text" class="res-commander" placeholder="Напр: Lumra">
+            <input type="text" class="res-commander" value="${defaultCmd}" placeholder="Напр: Lumra">
           </div>
           <div>
             <label style="margin-top:0;">Ссылка на Moxfield</label>
-            <input type="text" class="res-mox" placeholder="https://moxfield.com/...">
+            <input type="text" class="res-mox" value="${defaultMox}" placeholder="https://moxfield.com/...">
           </div>
         </div>
       `;
@@ -523,6 +657,8 @@
     async function createEvent() {
       const btn = document.getElementById('btn-event');
       const errBox = document.getElementById('event-error');
+      const existingPath = document.getElementById('event-file-path').value;
+      const author = document.getElementById('event-author').value.trim() || "Андрей";
       const title = document.getElementById('event-title').value.trim() || "EDH Встреча";
       const date = document.getElementById('event-date').value;
       const format = document.getElementById('event-format').value.trim() || "Commander / Bracket 3";
@@ -557,15 +693,16 @@
       });
 
       const slug = slugify(title);
-      const filename = `content/events/${date}-${slug}.md`;
+      const filename = existingPath || `content/events/${date}-${slug}.md`;
 
-      const content = `---\ntitle: "${title}"\ndate: "${date}"\nformat: "${format}"\nplayers_count: ${count}\n${resultsYaml}---\n${bodyText}\n`;
+      const content = `---\ntitle: "${title}"\ndate: "${date}"\nauthor: "${author}"\nformat: "${format}"\nplayers_count: ${count}\n${resultsYaml}---\n${bodyText}\n`;
 
       try {
-        await commitToGitHub(filename, content, `Add tournament report ${date}`);
+        await commitToGitHub(filename, content, `Save tournament report ${date}`);
         document.getElementById('event-success').style.display = 'block';
-        document.getElementById('event-body').value = '';
-        setTimeout(() => document.getElementById('event-success').style.display = 'none', 4000);
+        resetEventForm();
+        await loadEventsList();
+        setTimeout(() => document.getElementById('event-success').style.display = 'none', 3000);
       } catch (e) {
         errBox.innerText = 'Ошибка публикации: ' + e.message;
         errBox.style.display = 'block';
