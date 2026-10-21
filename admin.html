@@ -52,8 +52,10 @@
       cursor: pointer;
       width: 100%;
       margin-top: 20px;
+      transition: background 0.2s;
     }
     button:hover { background: #ff6347; }
+    button:disabled { background: var(--border-color); cursor: not-allowed; }
     .success { color: var(--green); text-align: center; font-weight: bold; margin-top: 10px; display: none; }
     .auth-box { text-align: center; padding: 40px 20px; }
   </style>
@@ -80,7 +82,7 @@
         <input type="text" id="player-name" placeholder="Например: Андрей">
         <label>Любимый генерал / Комментарий</label>
         <input type="text" id="player-cmd" placeholder="Например: Lumra">
-        <button onclick="createPlayer()">Сохранить участника</button>
+        <button id="btn-player" onclick="createPlayer()">Сохранить участника</button>
         <div id="player-success" class="success">Участник успешно добавлен! 🎉</div>
       </div>
 
@@ -104,7 +106,7 @@
         <label>Заметки / Описание турнира</label>
         <textarea id="event-body" rows="3" placeholder="Итоги встреч, интересные моменты..."></textarea>
 
-        <button onclick="createEvent()">Опубликовать отчёт</button>
+        <button id="btn-event" onclick="createEvent()">Опубликовать отчёт</button>
         <div id="event-success" class="success">Отчёт успешно опубликован на сайте! 🚀</div>
       </div>
 
@@ -143,16 +145,32 @@
       }
     }
 
+    // Транслитерация кириллицы в латиницу для безопасных имён файлов
+    function slugify(text) {
+      const ru = {
+        'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh',
+        'з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o',
+        'п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'ts',
+        'ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya'
+      };
+      return text.toLowerCase().split('').map(char => ru[char] || char).join('')
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '') || 'event';
+    }
+
     async function commitToGitHub(path, content, message) {
       const token = getToken();
       const url = `https://api.github.com/repos/${REPO}/contents/${path}`;
       
       let sha = null;
-      const getRes = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
-      if (getRes.ok) {
-        const fileData = await getRes.json();
-        sha = fileData.sha;
-      }
+      try {
+        const getRes = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
+        if (getRes.ok) {
+          const fileData = await getRes.json();
+          sha = fileData.sha;
+        }
+      } catch (e) {}
 
       const bodyData = {
         message: message,
@@ -176,11 +194,15 @@
     }
 
     async function createPlayer() {
+      const btn = document.getElementById('btn-player');
       const name = document.getElementById('player-name').value.trim();
       const cmd = document.getElementById('player-cmd').value.trim();
       if (!name) return alert('Введите имя игрока!');
 
-      const slug = name.toLowerCase().replace(/[^a-zа-я0-9]/g, '_');
+      btn.disabled = true;
+      btn.innerText = 'Сохранение... ⏳';
+
+      const slug = slugify(name);
       const content = `---\nname: "${name}"\nfavorite_commander: "${cmd}"\n---\n`;
 
       try {
@@ -191,21 +213,28 @@
         setTimeout(() => document.getElementById('player-success').style.display = 'none', 4000);
       } catch (e) {
         alert('Ошибка: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Сохранить участника';
       }
     }
 
     async function createEvent() {
-      const title = document.getElementById('event-title').value;
+      const btn = document.getElementById('btn-event');
+      const title = document.getElementById('event-title').value.trim();
       const date = document.getElementById('event-date').value;
-      const format = document.getElementById('event-format').value;
+      const format = document.getElementById('event-format').value.trim();
       const count = document.getElementById('event-count').value;
-      const winner = document.getElementById('winner-name').value;
-      const mox = document.getElementById('winner-mox').value;
-      const bodyText = document.getElementById('event-body').value;
+      const winner = document.getElementById('winner-name').value.trim();
+      const mox = document.getElementById('winner-mox').value.trim();
+      const bodyText = document.getElementById('event-body').value.trim();
 
       if (!date) return alert('Выберите дату!');
 
-      const slug = title.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      btn.disabled = true;
+      btn.innerText = 'Публикация... ⏳';
+
+      const slug = slugify(title);
       const filename = `content/events/${date}-${slug}.md`;
 
       let content = `---
@@ -230,6 +259,9 @@ ${bodyText}
         setTimeout(() => document.getElementById('event-success').style.display = 'none', 4000);
       } catch (e) {
         alert('Ошибка: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Опубликовать отчёт';
       }
     }
 
