@@ -7,7 +7,6 @@
   <!-- Подключаем надежный парсер YAML и Markdown -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <style>
     :root {
       --bg-color: #121214;
@@ -43,6 +42,7 @@
       border: 1px dashed var(--border-color);
       padding: 4px 12px;
       border-radius: 6px;
+      transition: all 0.2s;
     }
     .admin-link:hover { color: var(--accent-hover); border-color: var(--accent-color); }
 
@@ -164,7 +164,7 @@
   <div class="container">
     <header>
       <h1>🎪 The Clown's Council</h1>
-      <p class="subtitle">EDH Commander — Отчёты о турнирах и результаты встреч</p>
+      <p class="subtitle">EDH Commander — Результаты турниров и отчёты о встречах</p>
       <a href="admin.html" class="admin-link">⚙️ Панель организатора</a>
     </header>
 
@@ -245,7 +245,6 @@
       event.target.classList.add('active');
     }
 
-    // Использование профессионального парсера js-yaml для абсолютной надежности
     function parseFrontmatter(text) {
       const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
       if (!match) return { data: {}, body: text };
@@ -372,16 +371,6 @@
     }
 
     loadReports();
-
-    if (window.netlifyIdentity) {
-      window.netlifyIdentity.on("init", user => {
-        if (!user) {
-          window.netlifyIdentity.on("login", () => {
-            document.location.href = "https://theclownscouncil.netlify.app/admin/";
-          });
-        }
-      });
-    }
   </script>
 </body>
 </html>
